@@ -17,7 +17,6 @@ import '../../shared/widgets/app_layout.dart';
 import '../../shared/widgets/app_toast.dart';
 import 'data/customer_repository.dart';
 import 'widgets/add_saldo_dialog.dart';
-import 'widgets/customer_form_dialog.dart';
 import 'widgets/customer_saved_time_dialog.dart';
 
 class CustomerPage extends StatefulWidget {
@@ -128,30 +127,6 @@ class _CustomerPageState extends State<CustomerPage> {
     return confirmed == true;
   }
 
-  Future<void> _openAddDialog() async {
-    final result = await showDialog<CustomerFormResult>(
-      context: context,
-      builder: (_) => const CustomerFormDialog(),
-    );
-    if (result == null) return;
-
-    try {
-      await _repository.addCustomer(
-        name: result.name,
-        phone: result.phone,
-        address: result.address,
-        email: result.email,
-        password: result.password,
-      );
-      if (!mounted) return;
-      _notifySuccess("Member ${result.name} berhasil ditambahkan");
-      await _load(_pagination.currentPage);
-    } on CustomerRepositoryException catch (e) {
-      if (!mounted) return;
-      _notifyError(e.message);
-    }
-  }
-
   Future<void> _openAddSaldoDialog() async {
     final result = await showDialog<AddSaldoResult>(
       context: context,
@@ -208,31 +183,6 @@ class _CustomerPageState extends State<CustomerPage> {
     final date = "${now.year}-${two(now.month)}-${two(now.day)}";
     return "SALDO/${BusinessInfo.outletCode}/$date/"
         "${transaksiSaldoId.toString().padLeft(4, '0')}";
-  }
-
-  Future<void> _openEditDialog(Customer customer) async {
-    final result = await showDialog<CustomerFormResult>(
-      context: context,
-      builder: (_) => CustomerFormDialog(customer: customer),
-    );
-    if (result == null) return;
-
-    try {
-      await _repository.editCustomer(
-        customerId: customer.id,
-        name: result.name,
-        phone: result.phone,
-        address: result.address,
-        email: result.email,
-        password: result.password.isEmpty ? null : result.password,
-      );
-      if (!mounted) return;
-      _notifySuccess("Member ${result.name} berhasil diperbarui");
-      await _load(_pagination.currentPage);
-    } on CustomerRepositoryException catch (e) {
-      if (!mounted) return;
-      _notifyError(e.message);
-    }
   }
 
   Future<void> _confirmDelete(Customer customer) async {
@@ -348,7 +298,6 @@ class _CustomerPageState extends State<CustomerPage> {
                   index +
                   1,
               customer: customer,
-              onEdit: () => _openEditDialog(customer),
               onViewSavedTime: () => _openSavedTimeDialog(customer),
               onResetPassword: () => _confirmResetPassword(customer),
               onDelete: () => _confirmDelete(customer),
@@ -429,27 +378,6 @@ class _CustomerPageState extends State<CustomerPage> {
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.text,
               side: const BorderSide(color: AppColors.border),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        SizedBox(
-          height: 40,
-          child: ElevatedButton.icon(
-            onPressed: _openAddDialog,
-            icon: const Icon(Icons.person_add_alt_1_rounded, size: 16),
-            label: Text(
-              "Tambah Member",
-              style: AppText.button.copyWith(fontSize: 13),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
@@ -698,7 +626,6 @@ class _CustomerRow extends StatelessWidget {
   final bool header;
   final int? no;
   final Customer? customer;
-  final VoidCallback? onEdit;
   final VoidCallback? onViewSavedTime;
   final VoidCallback? onResetPassword;
   final VoidCallback? onDelete;
@@ -707,7 +634,6 @@ class _CustomerRow extends StatelessWidget {
     : header = true,
       no = null,
       customer = null,
-      onEdit = null,
       onViewSavedTime = null,
       onResetPassword = null,
       onDelete = null;
@@ -715,7 +641,6 @@ class _CustomerRow extends StatelessWidget {
   const _CustomerRow.data({
     required this.no,
     required this.customer,
-    required this.onEdit,
     required this.onViewSavedTime,
     required this.onResetPassword,
     required this.onDelete,
@@ -791,9 +716,6 @@ class _CustomerRow extends StatelessWidget {
             ),
             onSelected: (value) {
               switch (value) {
-                case 'edit':
-                  onEdit?.call();
-                  break;
                 case 'saved_time':
                   onViewSavedTime?.call();
                   break;
@@ -806,10 +728,6 @@ class _CustomerRow extends StatelessWidget {
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'edit',
-                child: _menuItem(Icons.edit_outlined, "Edit"),
-              ),
               PopupMenuItem(
                 value: 'saved_time',
                 child: _menuItem(

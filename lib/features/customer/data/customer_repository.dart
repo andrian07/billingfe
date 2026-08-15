@@ -118,40 +118,6 @@ class CustomerRepository {
     return rawId is int ? rawId : int.tryParse(rawId?.toString() ?? "") ?? 0;
   }
 
-  Future<void> addCustomer({
-    required String name,
-    required String phone,
-    String? address,
-    String? email,
-    String? password,
-  }) {
-    return _post(ApiEndpoints.addCustomer, {
-      "customer_name": name,
-      "customer_phone": phone,
-      if (address != null && address.isNotEmpty) "customer_address": address,
-      if (email != null && email.isNotEmpty) "customer_email": email,
-      if (password != null && password.isNotEmpty) "customer_pass": password,
-    });
-  }
-
-  Future<void> editCustomer({
-    required int customerId,
-    required String name,
-    required String phone,
-    String? address,
-    String? email,
-    String? password,
-  }) {
-    return _post(ApiEndpoints.editCustomer, {
-      "customer_id": "$customerId",
-      "customer_name": name,
-      "customer_phone": phone,
-      if (address != null && address.isNotEmpty) "customer_address": address,
-      if (email != null && email.isNotEmpty) "customer_email": email,
-      if (password != null && password.isNotEmpty) "customer_pass": password,
-    });
-  }
-
   Future<void> deleteCustomer(int customerId) {
     return _post(ApiEndpoints.deleteCustomer, {
       "customer_id": "$customerId",

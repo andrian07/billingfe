@@ -17,8 +17,6 @@ class ApiEndpoints {
 
   // Master customer
   static const String customerList = "$baseUrl/Master/customer_list";
-  static const String addCustomer = "$baseUrl/Master/add_customer";
-  static const String editCustomer = "$baseUrl/Master/edit_customer";
   static const String deleteCustomer = "$baseUrl/Master/delete_customer";
   static const String resetPasswordCustomer =
       "$baseUrl/Master/reset_pass_customer";
