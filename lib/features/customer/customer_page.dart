@@ -38,6 +38,7 @@ class _CustomerPageState extends State<CustomerPage> {
   bool _loading = true;
   String? _error;
   bool _isSuperadmin = false;
+  bool _syncing = false;
 
   @override
   void initState() {
@@ -53,6 +54,25 @@ class _CustomerPageState extends State<CustomerPage> {
 
   void _openSaldoManagement() {
     context.push('/setting/saldo');
+  }
+
+  Future<void> _syncCustomers() async {
+    setState(() => _syncing = true);
+    try {
+      final syncedCount = await _repository.syncCustomers();
+      if (!mounted) return;
+      _notifySuccess(
+        syncedCount > 0
+            ? "$syncedCount member baru berhasil disinkronkan"
+            : "Tidak ada member baru untuk disinkronkan",
+      );
+      await _load(_pagination.currentPage);
+    } on CustomerRepositoryException catch (e) {
+      if (!mounted) return;
+      _notifyError(e.message);
+    } finally {
+      if (mounted) setState(() => _syncing = false);
+    }
   }
 
   Future<void> _load(int page) async {
@@ -352,6 +372,32 @@ class _CustomerPageState extends State<CustomerPage> {
               icon: const Icon(Icons.settings_outlined, size: 16),
               label: Text(
                 "Kelola Saldo",
+                style: AppText.button.copyWith(fontSize: 13),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.text,
+                side: const BorderSide(color: AppColors.border),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          SizedBox(
+            height: 40,
+            child: OutlinedButton.icon(
+              onPressed: _syncing ? null : _syncCustomers,
+              icon: _syncing
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.sync_rounded, size: 16),
+              label: Text(
+                "Sync Customer",
                 style: AppText.button.copyWith(fontSize: 13),
               ),
               style: OutlinedButton.styleFrom(

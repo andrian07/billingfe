@@ -118,6 +118,16 @@ class CustomerRepository {
     return rawId is int ? rawId : int.tryParse(rawId?.toString() ?? "") ?? 0;
   }
 
+  /// Pulls new customers from the gameon central server into billing_api's
+  /// local database via Master/sync_customer — used by the "Sync Customer"
+  /// action on the member page. Returns how many new customers were synced.
+  Future<int> syncCustomers() async {
+    final data = await _post(ApiEndpoints.syncCustomer, {});
+
+    final rawCount = data['synced_count'];
+    return rawCount is int ? rawCount : int.tryParse(rawCount?.toString() ?? "") ?? 0;
+  }
+
   Future<void> deleteCustomer(int customerId) {
     return _post(ApiEndpoints.deleteCustomer, {
       "customer_id": "$customerId",

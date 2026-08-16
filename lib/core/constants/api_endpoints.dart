@@ -26,6 +26,7 @@ class ApiEndpoints {
       "$baseUrl/Master/get_time_per_customer";
   static const String addCustomerSaldo =
       "$baseUrl/Master/add_customer_saldo";
+  static const String syncCustomer = "$baseUrl/Master/sync_customer";
 
   // Master price
   static const String priceList = "$baseUrl/Master/price_list";
