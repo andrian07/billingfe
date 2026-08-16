@@ -194,7 +194,7 @@ class AppSidebar extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  "Billiard Billing System",
+                  "Billing",
                   style: AppText.title,
                   maxLines: 2,
                 ),
