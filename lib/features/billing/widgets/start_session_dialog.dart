@@ -115,11 +115,44 @@ class _StartSessionDialogState extends State<StartSessionDialog> {
 
   static const _minDuration = Duration(minutes: 3);
 
+  /// True when the selected promo is a fixed-hour promo — picking one
+  /// auto-fills and locks the duration fields to that many hours.
+  bool get _promoLocksDuration =>
+      _selectedPromo?.type == PromoType.fixed &&
+      _selectedPromo?.hourGained != null;
+
   /// Duration fields are only free to edit when the customer isn't using
   /// saved time, or chose to use just part of it ("Sebagian") — picking
-  /// "Habiskan" locks the fields to the full saved balance.
+  /// "Habiskan" locks the fields to the full saved balance. A fixed-hour
+  /// promo locks them too, regardless of the saved-time state.
   bool get _durationFieldsEnabled =>
-      _useSavedTime != true || _habiskanTimer == false;
+      (_useSavedTime != true || _habiskanTimer == false) &&
+      !_promoLocksDuration;
+
+  void _selectPromo(Promo? promo) {
+    final lockedHours = promo?.type == PromoType.fixed
+        ? promo?.hourGained
+        : null;
+
+    setState(() {
+      final wasLocked = _promoLocksDuration;
+      _selectedPromo = promo;
+
+      if (lockedHours != null) {
+        _sessionType = SessionType.timer;
+        _durationHours = lockedHours;
+        _durationMinutes = 0;
+        _durationError = null;
+        _hourController.text = "$_durationHours";
+        _minuteController.text = "$_durationMinutes";
+      } else if (wasLocked) {
+        _durationHours = 0;
+        _durationMinutes = 0;
+        _hourController.text = "0";
+        _minuteController.text = "0";
+      }
+    });
+  }
 
   /// True when the manually-entered duration (only reachable via
   /// "Sebagian") is more than the customer's saved time balance.
@@ -453,8 +486,16 @@ class _StartSessionDialogState extends State<StartSessionDialog> {
                   child: Text(promo.name, overflow: TextOverflow.ellipsis),
                 ),
             ],
-            onChanged: (value) => setState(() => _selectedPromo = value),
+            onChanged: _selectPromo,
           ),
+          if (_promoLocksDuration) ...[
+            const SizedBox(height: 8),
+            Text(
+              "Durasi timer otomatis mengikuti promo ini "
+              "(${_selectedPromo!.hourGained} jam) dan tidak bisa diubah.",
+              style: AppText.caption,
+            ),
+          ],
 
           const SizedBox(height: 28),
           Row(

@@ -70,11 +70,13 @@ class PromoRepository {
     required String name,
     required PromoType type,
     required int value,
+    int? hourGained,
   }) {
     return _post(ApiEndpoints.addPromo, {
       "ms_promo_name": name,
       "ms_promo_tipe": type.apiValue,
       "ms_promo_value": "$value",
+      if (hourGained != null) "hour": "$hourGained",
     });
   }
 
@@ -83,12 +85,14 @@ class PromoRepository {
     required String name,
     required PromoType type,
     required int value,
+    int? hourGained,
   }) {
     return _post(ApiEndpoints.editPromo, {
       "ms_promo_id": "$id",
       "ms_promo_name": name,
       "ms_promo_tipe": type.apiValue,
       "ms_promo_value": "$value",
+      "hour": hourGained != null ? "$hourGained" : "",
     });
   }
 

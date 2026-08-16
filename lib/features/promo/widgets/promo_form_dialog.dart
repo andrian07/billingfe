@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/theme/app_colors.dart';
@@ -11,11 +12,13 @@ class PromoFormResult {
   final String name;
   final PromoType type;
   final int value;
+  final int? hourGained;
 
   const PromoFormResult({
     required this.name,
     required this.type,
     required this.value,
+    this.hourGained,
   });
 }
 
@@ -36,6 +39,11 @@ class _PromoFormDialogState extends State<PromoFormDialog> {
   late final _valueController = TextEditingController(
     text: widget.promo != null ? formatThousands(widget.promo!.value) : "",
   );
+  late final _hourController = TextEditingController(
+    text: widget.promo?.hourGained != null
+        ? "${widget.promo!.hourGained}"
+        : "",
+  );
   late PromoType _type = widget.promo?.type ?? PromoType.percentage;
 
   bool get _isEdit => widget.promo != null;
@@ -44,6 +52,7 @@ class _PromoFormDialogState extends State<PromoFormDialog> {
   void dispose() {
     _nameController.dispose();
     _valueController.dispose();
+    _hourController.dispose();
     super.dispose();
   }
 
@@ -55,6 +64,9 @@ class _PromoFormDialogState extends State<PromoFormDialog> {
         name: _nameController.text.trim(),
         type: _type,
         value: parseThousands(_valueController.text) ?? 0,
+        hourGained: _type == PromoType.fixed
+            ? int.tryParse(_hourController.text.trim())
+            : null,
       ),
     );
   }
@@ -133,6 +145,38 @@ class _PromoFormDialogState extends State<PromoFormDialog> {
                     return null;
                   },
                 ),
+
+                if (_type == PromoType.fixed) ...[
+                  const SizedBox(height: 20),
+                  _label("Jam yang Didapat"),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _hourController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    style: AppText.body,
+                    decoration: _inputDecoration(
+                      hint: "0",
+                      prefixIcon: Icons.timer_outlined,
+                      suffixText: "jam",
+                    ),
+                    validator: (value) {
+                      final parsed = int.tryParse((value ?? "").trim());
+                      if (parsed == null || parsed <= 0) {
+                        return "Masukkan jumlah jam yang valid";
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Durasi timer otomatis terisi & terkunci sebesar ini "
+                    "saat promo ini dipilih di open billing.",
+                    style: AppText.caption,
+                  ),
+                ],
 
                 const SizedBox(height: 28),
                 Row(

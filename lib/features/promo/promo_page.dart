@@ -117,6 +117,7 @@ class _PromoPageState extends State<PromoPage> {
         name: result.name,
         type: result.type,
         value: result.value,
+        hourGained: result.hourGained,
       );
       if (!mounted) return;
       _notifySuccess("Promo ${result.name} berhasil ditambahkan");
@@ -140,6 +141,7 @@ class _PromoPageState extends State<PromoPage> {
         name: result.name,
         type: result.type,
         value: result.value,
+        hourGained: result.hourGained,
       );
       if (!mounted) return;
       _notifySuccess("Promo ${result.name} berhasil diperbarui");
