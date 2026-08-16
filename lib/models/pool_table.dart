@@ -6,6 +6,7 @@ class PoolTable {
   final String id;
   final String name;
   final TableStatus status;
+  final int? categoryMejaId;
   final String? badge;
   final String? startTime;
   final String? timerText;
@@ -25,6 +26,7 @@ class PoolTable {
     required this.id,
     required this.name,
     required this.status,
+    this.categoryMejaId,
     this.badge,
     this.startTime,
     this.timerText,
@@ -62,6 +64,7 @@ class PoolTable {
       id: id,
       name: name,
       status: status ?? this.status,
+      categoryMejaId: categoryMejaId,
       badge: badge ?? this.badge,
       startTime: startTime ?? this.startTime,
       timerText: timerText ?? this.timerText,

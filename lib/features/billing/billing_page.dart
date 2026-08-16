@@ -233,8 +233,15 @@ class _BillingPageState extends State<BillingPage> {
   }
 
   void _openMoveTableDialog(PoolTable table) async {
+    // hanya meja dengan category yang sama yang boleh jadi tujuan (backend Billing::move_table()
+    // menolak kalau category beda) - difilter di sini supaya tidak muncul sebagai pilihan sama sekali
     final emptyTables = _tables
-        .where((t) => t.status == TableStatus.ready && t.id != table.id)
+        .where(
+          (t) =>
+              t.status == TableStatus.ready &&
+              t.id != table.id &&
+              t.categoryMejaId == table.categoryMejaId,
+        )
         .toList();
 
     final targetId = await showDialog<String>(
@@ -538,11 +545,13 @@ class _BillingPageState extends State<BillingPage> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: tables.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 5,
+      // maxCrossAxisExtent (bukan crossAxisCount tetap) supaya jumlah kolom mengikuti lebar layar -
+      // di layar besar tambah kolom (card tetap proporsional), bukan 5 card yang meregang lebar sekali
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 230,
         mainAxisSpacing: 14,
         crossAxisSpacing: 14,
-        mainAxisExtent: 190,
+        mainAxisExtent: 196,
       ),
       itemBuilder: (context, index) {
         final table = tables[index];

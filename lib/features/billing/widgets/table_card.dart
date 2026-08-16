@@ -81,15 +81,20 @@ class TableCard extends StatelessWidget {
           color: selected ? color : (isReady ? AppColors.border : color.withValues(alpha: .35)),
           width: selected ? 2 : 1,
         ),
-        boxShadow: selected
-            ? [
-                BoxShadow(
-                  color: color.withValues(alpha: .25),
-                  blurRadius: 14,
-                  offset: const Offset(0, 6),
-                ),
-              ]
-            : null,
+        boxShadow: [
+          if (selected)
+            BoxShadow(
+              color: color.withValues(alpha: .25),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            )
+          else
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .06),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,6 +227,7 @@ class TableCard extends StatelessWidget {
             )
           else
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _actionSlot(
                   icon: Icons.payments_outlined,
@@ -229,14 +235,12 @@ class TableCard extends StatelessWidget {
                   color: AppColors.warning,
                   onTap: onPayment,
                 ),
-                const SizedBox(width: 5),
                 _actionSlot(
                   icon: Icons.swap_horiz_rounded,
                   tooltip: "Pindah Meja",
                   color: AppColors.info,
                   onTap: onMoveTable,
                 ),
-                const SizedBox(width: 5),
                 _actionSlot(
                   icon: Icons.more_time_rounded,
                   tooltip: "Tambah Durasi",
@@ -245,7 +249,6 @@ class TableCard extends StatelessWidget {
                       ? onAddDuration
                       : null,
                 ),
-                const SizedBox(width: 5),
                 _actionSlot(
                   icon: Icons.cancel_outlined,
                   tooltip: "Batalkan",
@@ -259,6 +262,10 @@ class TableCard extends StatelessWidget {
     );
   }
 
+  // Ukuran tombol dikunci (bukan Expanded+AspectRatio yang meregang mengikuti lebar card) supaya di
+  // layar besar - dengan card yang jadi lebih lebar - tombolnya tetap proporsional sebagai lingkaran
+  // ikon yang rapi, bukan kotak raksasa dengan ikon kecil mengambang di tengahnya. Sisa ruang di baris
+  // jadi jarak antar tombol (spaceBetween di caller), bukan tombolnya sendiri yang membesar.
   Widget _actionSlot({
     required IconData icon,
     required String tooltip,
@@ -268,27 +275,22 @@ class TableCard extends StatelessWidget {
     final enabled = onTap != null;
     final effectiveColor = enabled ? color : AppColors.textHint;
 
-    return Expanded(
-      child: Tooltip(
-        message: tooltip,
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: Material(
-            color: effectiveColor.withValues(alpha: enabled ? .12 : .05),
-            borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
-                  border: Border.all(
-                    color: effectiveColor.withValues(alpha: enabled ? .4 : .15),
-                  ),
-                ),
-                child: Icon(icon, size: 14, color: effectiveColor),
-              ),
-            ),
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: effectiveColor.withValues(alpha: enabled ? .14 : .06),
+        shape: CircleBorder(
+          side: BorderSide(
+            color: effectiveColor.withValues(alpha: enabled ? .3 : .12),
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: 34,
+            height: 34,
+            child: Icon(icon, size: 17, color: effectiveColor),
           ),
         ),
       ),
