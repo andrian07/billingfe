@@ -78,10 +78,10 @@ class _TutupKasDialogState extends State<TutupKasDialog> {
       if (!mounted) return;
       setState(() => _printing = false);
       AppToast.success(context, "Struk tutup kas berhasil dicetak");
-    } on CashierSummaryPrinterException catch (e) {
+    } catch (e) {
       if (!mounted) return;
       setState(() => _printing = false);
-      AppToast.error(context, e.message);
+      AppToast.error(context, "$e");
     }
   }
 

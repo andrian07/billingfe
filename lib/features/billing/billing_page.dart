@@ -222,7 +222,7 @@ class _BillingPageState extends State<BillingPage> {
     try {
       final receipt = await _invoiceRepository.generateInvoice(table, result);
       await _receiptPrinter.printReceipt(receipt);
-    } on ReceiptPrinterException catch (e) {
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,

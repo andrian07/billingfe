@@ -218,7 +218,7 @@ class _PosPageState extends State<PosPage> {
         cashierName: cashierName,
       );
       await _receiptPrinter.printCafeReceipt(receipt);
-    } on ReceiptPrinterException catch (e) {
+    } catch (e) {
       if (!mounted) return;
       AppToast.error(context, "Gagal mencetak struk: $e");
     }
