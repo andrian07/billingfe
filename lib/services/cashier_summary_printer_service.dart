@@ -48,7 +48,7 @@ class CashierSummaryPrinterService {
     CashierClosingSummary summary,
     String cashierName,
   ) async {
-    final ticket = await Ticket.create(PaperSize.mm58);
+    final ticket = await Ticket.create(PaperSize.mm80);
 
     ticket.text(
       "TUTUP KAS",

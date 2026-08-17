@@ -52,7 +52,7 @@ class ReceiptPrinterService {
   }
 
   Future<Ticket> _buildTicket(Receipt receipt) async {
-    final ticket = await Ticket.create(PaperSize.mm58);
+    final ticket = await Ticket.create(PaperSize.mm80);
 
     ticket.text(
       receipt.businessName,
@@ -146,7 +146,7 @@ class ReceiptPrinterService {
   }
 
   Future<Ticket> _buildCafeTicket(CafeReceipt receipt) async {
-    final ticket = await Ticket.create(PaperSize.mm58);
+    final ticket = await Ticket.create(PaperSize.mm80);
 
     ticket.text(
       receipt.businessName,
