@@ -180,21 +180,6 @@ class TableCard extends StatelessWidget {
                 table.startTime != null ? "Mulai ${table.startTime}" : "-",
                 style: AppText.caption.copyWith(fontSize: 10),
               ),
-              if (table.memberName != null) ...[
-                const Spacer(),
-                Flexible(
-                  child: Text(
-                    table.memberName!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.end,
-                    style: AppText.caption.copyWith(
-                      fontSize: 10,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
 

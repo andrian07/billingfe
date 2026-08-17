@@ -1,7 +1,7 @@
 class ApiEndpoints {
   ApiEndpoints._();
 
-  static const String baseUrl = "http://localhost/billing_api";
+  static const String baseUrl = "http://localhost/billing_api_billiard";
 
   // Auth
   static const String login = "$baseUrl/Auth/login";
@@ -14,19 +14,6 @@ class ApiEndpoints {
   static const String deleteUser = "$baseUrl/Master/delete_user";
   static const String resetPasswordUser = "$baseUrl/Master/reset_pass_user";
   static const String userQrCode = "$baseUrl/Master/user_qrcode";
-
-  // Master customer
-  static const String customerList = "$baseUrl/Master/customer_list";
-  static const String deleteCustomer = "$baseUrl/Master/delete_customer";
-  static const String resetPasswordCustomer =
-      "$baseUrl/Master/reset_pass_customer";
-  static const String customerListNoPaging =
-      "$baseUrl/Master/customer_list_no_pagging";
-  static const String getTimePerCustomer =
-      "$baseUrl/Master/get_time_per_customer";
-  static const String addCustomerSaldo =
-      "$baseUrl/Master/add_customer_saldo";
-  static const String syncCustomer = "$baseUrl/Master/sync_customer";
 
   // Master price
   static const String priceList = "$baseUrl/Master/price_list";
@@ -61,11 +48,6 @@ class ApiEndpoints {
   // Master payment
   static const String paymentList = "$baseUrl/Master/get_payment_list";
 
-  // Master time save
-  static const String checkTimeSave = "$baseUrl/Master/check_time_save";
-  static const String getSaveCustomerTime =
-      "$baseUrl/Master/get_save_customer_time";
-
   // Purchase
   static const String purchaseAdd = "$baseUrl/Purchase/purchase_add";
   static const String purchaseList = "$baseUrl/Purchase/purchase_list";
@@ -86,8 +68,7 @@ class ApiEndpoints {
   static const String settingTable = "$baseUrl/Billing/setting_table";
   static const String updateSettingTable =
       "$baseUrl/Billing/update_setting_table";
-  static const String transactionSaldoList =
-      "$baseUrl/Billing/transaction_saldo_list";
+  static const String resetLampu = "$baseUrl/Billing/reset_lampu";
 
   // Cafe
   static const String saveTransactionCafe =
@@ -101,30 +82,17 @@ class ApiEndpoints {
       "$baseUrl/Cafe/transaction_cafe_list";
 
   // Setting
-  static const String pointExchangeList = "$baseUrl/Setting/point_exchange";
-  static const String addPointExchange = "$baseUrl/Setting/add_point_exchange";
-  static const String editPointExchange =
-      "$baseUrl/Setting/edit_point_exchange";
-  static const String deletePointExchange =
-      "$baseUrl/Setting/delete_point_exchange";
   static const String categoryMejaList = "$baseUrl/Setting/category_meja";
   static const String addCategoryMeja = "$baseUrl/Setting/add_category_meja";
   static const String editCategoryMeja = "$baseUrl/Setting/edit_category_meja";
   static const String deleteCategoryMeja =
       "$baseUrl/Setting/delete_category_meja";
-  static const String saldoList = "$baseUrl/Setting/saldo_list";
-  static const String saldoNoPaging =
-      "$baseUrl/Setting/saldo_list_no_pagging";
-  static const String addSaldo = "$baseUrl/Setting/add_saldo";
-  static const String editSaldo = "$baseUrl/Setting/edit_saldo";
-  static const String deleteSaldo = "$baseUrl/Setting/delete_saldo";
 
   // Report
   static const String transactionTodayByCashier =
       "$baseUrl/Report/get_transaction_today_by_cashier";
   static const String billingReport = "$baseUrl/Report/billing_report";
   static const String cafeReport = "$baseUrl/Report/cafe_report";
-  static const String saldoReport = "$baseUrl/Report/saldo_report";
   static const String stockReport = "$baseUrl/Report/stock";
 
   // Access (roles & menu permissions)

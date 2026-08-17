@@ -9,19 +9,16 @@ const _routesByKey = {
   'transaksi': '/transaksi',
   'pengguna': '/pengguna',
   'role': '/role',
-  'pelanggan': '/pelanggan',
   'pengaturan': '/pengaturan',
   'promo': '/promo',
   'produk': '/produk',
   'pembelian': '/pembelian',
   'laporan_billing': '/laporan/billing',
   'laporan_cafe': '/laporan/cafe',
-  'laporan_saldo': '/laporan/saldo',
   'laporan_stok': '/laporan/stok',
   'unit': '/unit',
   'kategori': '/kategori',
   'setting_table': '/setting/table',
-  'setting_point_exchange': '/setting/point-exchange',
 };
 
 Future<void> navigateToMenu(BuildContext context, String key) async {

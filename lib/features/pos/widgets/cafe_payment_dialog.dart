@@ -6,21 +6,27 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/cart_item.dart';
-import '../../../models/customer.dart';
 import '../../../models/payment_method.dart';
 import '../../../services/session_storage.dart';
-import '../../customer/data/customer_repository.dart';
 import '../../payment/data/payment_method_repository.dart';
 import '../data/cafe_repository.dart';
 
 class CafePaymentResult {
   final int transactionCafeId;
+  final String paymentMethodName;
+  final int? table;
+  final int tax;
 
-  const CafePaymentResult({required this.transactionCafeId});
+  const CafePaymentResult({
+    required this.transactionCafeId,
+    required this.paymentMethodName,
+    this.table,
+    this.tax = 0,
+  });
 }
 
-/// Payment popup for the POS/cafe checkout flow — collects customer, table,
-/// and payment method, then submits the cart to Cafe/save_transaction_cafe.
+/// Payment popup for the POS/cafe checkout flow — collects table and
+/// payment method, then submits the cart to Cafe/save_transaction_cafe.
 /// The server computes the authoritative total; the summary shown here is
 /// for the cashier's reference only.
 class CafePaymentDialog extends StatefulWidget {
@@ -39,7 +45,6 @@ class CafePaymentDialog extends StatefulWidget {
 
 class _CafePaymentDialogState extends State<CafePaymentDialog> {
   final _cafeRepository = CafeRepository();
-  final _customerRepository = CustomerRepository();
   final _paymentMethodRepository = PaymentMethodRepository();
   final _sessionStorage = SessionStorage();
 
@@ -47,10 +52,8 @@ class _CafePaymentDialogState extends State<CafePaymentDialog> {
 
   bool _loadingOptions = true;
   String? _loadError;
-  List<Customer> _customers = [];
   List<PaymentMethod> _paymentMethods = [];
 
-  Customer? _selectedCustomer;
   PaymentMethod? _selectedPaymentMethod;
 
   bool _submitting = false;
@@ -75,25 +78,14 @@ class _CafePaymentDialogState extends State<CafePaymentDialog> {
     });
 
     try {
-      final customerResult = await _customerRepository.getCustomers(
-        page: 1,
-        perPage: 200,
-      );
       final paymentMethods = await _paymentMethodRepository
           .getPaymentMethods();
       if (!mounted) return;
       setState(() {
-        _customers = customerResult.customers;
         _paymentMethods = paymentMethods;
         _selectedPaymentMethod = paymentMethods.isNotEmpty
             ? paymentMethods.first
             : null;
-        _loadingOptions = false;
-      });
-    } on CustomerRepositoryException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _loadError = e.message;
         _loadingOptions = false;
       });
     } on PaymentMethodRepositoryException catch (e) {
@@ -121,7 +113,6 @@ class _CafePaymentDialogState extends State<CafePaymentDialog> {
       final table = int.tryParse(_tableController.text.trim());
 
       final transactionCafeId = await _cafeRepository.submitTransactionCafe(
-        customerId: _selectedCustomer?.id,
         paymentId: paymentMethod.id,
         table: table,
         tax: 0,
@@ -131,9 +122,14 @@ class _CafePaymentDialogState extends State<CafePaymentDialog> {
       );
 
       if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pop(CafePaymentResult(transactionCafeId: transactionCafeId));
+      Navigator.of(context).pop(
+        CafePaymentResult(
+          transactionCafeId: transactionCafeId,
+          paymentMethodName: paymentMethod.name,
+          table: table,
+          tax: 0,
+        ),
+      );
     } on CafeRepositoryException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -209,42 +205,6 @@ class _CafePaymentDialogState extends State<CafePaymentDialog> {
         _label("Item Pesanan"),
         const SizedBox(height: 10),
         _buildItemsList(),
-
-        const SizedBox(height: 20),
-        _label("Customer (opsional)"),
-        const SizedBox(height: 8),
-        Autocomplete<Customer>(
-          displayStringForOption: (c) => c.name,
-          optionsBuilder: (textEditingValue) {
-            if (textEditingValue.text.isEmpty) return _customers;
-            final query = textEditingValue.text.toLowerCase();
-            return _customers.where(
-              (c) => c.name.toLowerCase().contains(query),
-            );
-          },
-          onSelected: (customer) =>
-              setState(() => _selectedCustomer = customer),
-          fieldViewBuilder: (context, controller, focusNode, onSubmit) {
-            return TextField(
-              controller: controller,
-              focusNode: focusNode,
-              style: AppText.body,
-              decoration: _inputDecoration(
-                hint: "Cari nama customer",
-                prefixIcon: Icons.person_outline_rounded,
-                loading: _loadingOptions,
-              ),
-              onChanged: (_) => setState(() => _selectedCustomer = null),
-            );
-          },
-          optionsViewBuilder: (context, onSelected, options) {
-            return _buildOptionsCard<Customer>(
-              options: options,
-              onSelected: onSelected,
-              labelOf: (c) => c.name,
-            );
-          },
-        ),
 
         const SizedBox(height: 20),
         Row(
@@ -588,48 +548,6 @@ class _CafePaymentDialogState extends State<CafePaymentDialog> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildOptionsCard<T extends Object>({
-    required Iterable<T> options,
-    required void Function(T) onSelected,
-    required String Function(T) labelOf,
-  }) {
-    return Align(
-      alignment: Alignment.topLeft,
-      child: Material(
-        color: AppColors.card,
-        elevation: 8,
-        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-        child: Container(
-          width: 372,
-          constraints: const BoxConstraints(maxHeight: 220),
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: ListView.builder(
-            shrinkWrap: true,
-            padding: EdgeInsets.zero,
-            itemCount: options.length,
-            itemBuilder: (context, index) {
-              final option = options.elementAt(index);
-              return InkWell(
-                onTap: () => onSelected(option),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  child: Text(labelOf(option), style: AppText.body),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
     );
   }
 

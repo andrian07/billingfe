@@ -180,11 +180,9 @@ class _BillingPageState extends State<BillingPage> {
         tableId: table.id,
         mode: result.sessionType,
         startTime: now,
-        customerId: result.customerId,
         promoId: result.promoId,
         endTime: endAt,
         duration: result.duration,
-        useSavedTime: result.useSavedTime,
       );
       if (!mounted) return;
       AppToast.success(context, "Berhasil membuka ${table.name}");
@@ -347,7 +345,6 @@ class _BillingPageState extends State<BillingPage> {
   Widget build(BuildContext context) {
     return AppLayout(
       title: "Billing",
-      subtitle: "Nama Toko",
       showSearch: false,
       activeMenuKey: "meja",
       onMenuSelect: (key) => navigateToMenu(context, key),
@@ -433,7 +430,6 @@ class _BillingPageState extends State<BillingPage> {
   Widget _buildStatsRow() {
     final billing = _cashierSummary?.billing ?? CashierTransactionSummary.empty;
     final cafe = _cashierSummary?.cafe ?? CashierTransactionSummary.empty;
-    final saldo = _cashierSummary?.saldo ?? CashierTransactionSummary.empty;
 
     return Row(
       children: [
@@ -454,16 +450,6 @@ class _BillingPageState extends State<BillingPage> {
             label: "Rincian Transaksi Cafe",
             value: formatCurrency(cafe.totalTransaction),
             subtitle: "${cafe.invoiceCount} nota hari ini",
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: StatCard(
-            icon: Icons.savings_outlined,
-            color: AppColors.info,
-            label: "Total Transaksi Saldo",
-            value: formatCurrency(saldo.totalTransaction),
-            subtitle: "${saldo.invoiceCount} nota hari ini",
           ),
         ),
       ],

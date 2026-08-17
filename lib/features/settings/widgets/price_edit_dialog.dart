@@ -8,19 +8,9 @@ import '../../../core/utils/thousands_input_formatter.dart';
 import '../../../models/price_setting.dart';
 
 class PriceEditResult {
-  final int price1;
-  final int price2;
-  final int price3;
-  final int price4;
-  final int price5;
+  final int price;
 
-  const PriceEditResult({
-    required this.price1,
-    required this.price2,
-    required this.price3,
-    required this.price4,
-    required this.price5,
-  });
+  const PriceEditResult({required this.price});
 }
 
 class PriceEditDialog extends StatefulWidget {
@@ -41,19 +31,13 @@ class PriceEditDialog extends StatefulWidget {
 
 class _PriceEditDialogState extends State<PriceEditDialog> {
   final _formKey = GlobalKey<FormState>();
-  late final _controllers = [
-    TextEditingController(text: formatThousands(widget.item.price1)),
-    TextEditingController(text: formatThousands(widget.item.price2)),
-    TextEditingController(text: formatThousands(widget.item.price3)),
-    TextEditingController(text: formatThousands(widget.item.price4)),
-    TextEditingController(text: formatThousands(widget.item.price5)),
-  ];
+  late final _controller = TextEditingController(
+    text: formatThousands(widget.item.price),
+  );
 
   @override
   void dispose() {
-    for (final controller in _controllers) {
-      controller.dispose();
-    }
+    _controller.dispose();
     super.dispose();
   }
 
@@ -61,13 +45,7 @@ class _PriceEditDialogState extends State<PriceEditDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     Navigator.of(context).pop(
-      PriceEditResult(
-        price1: parseThousands(_controllers[0].text) ?? 0,
-        price2: parseThousands(_controllers[1].text) ?? 0,
-        price3: parseThousands(_controllers[2].text) ?? 0,
-        price4: parseThousands(_controllers[3].text) ?? 0,
-        price5: parseThousands(_controllers[4].text) ?? 0,
-      ),
+      PriceEditResult(price: parseThousands(_controller.text) ?? 0),
     );
   }
 
@@ -98,25 +76,22 @@ class _PriceEditDialogState extends State<PriceEditDialog> {
                 const Divider(color: AppColors.divider, height: 1),
                 const SizedBox(height: 22),
 
-                for (var i = 0; i < 5; i++) ...[
-                  if (i > 0) const SizedBox(height: 16),
-                  _label("Harga ${i + 1}"),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _controllers[i],
-                    keyboardType: TextInputType.number,
-                    inputFormatters: const [ThousandsInputFormatter()],
-                    style: AppText.body,
-                    decoration: _inputDecoration(),
-                    validator: (value) {
-                      final parsed = parseThousands(value ?? "");
-                      if (parsed == null || parsed < 0) {
-                        return "Masukkan angka yang valid";
-                      }
-                      return null;
-                    },
-                  ),
-                ],
+                _label("Harga"),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _controller,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: const [ThousandsInputFormatter()],
+                  style: AppText.body,
+                  decoration: _inputDecoration(),
+                  validator: (value) {
+                    final parsed = parseThousands(value ?? "");
+                    if (parsed == null || parsed < 0) {
+                      return "Masukkan angka yang valid";
+                    }
+                    return null;
+                  },
+                ),
 
                 const SizedBox(height: 28),
                 Row(

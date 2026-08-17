@@ -5,32 +5,21 @@ import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/session_catalog.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
-import '../../../core/utils/formatters.dart';
-import '../../../models/customer.dart';
 import '../../../models/pool_table.dart';
 import '../../../models/promo.dart';
-import '../../../models/saved_customer_time.dart';
-import '../../customer/data/customer_repository.dart';
 import '../../promo/data/promo_repository.dart';
-import '../data/billing_repository.dart';
 
 class StartSessionResult {
   final SessionType sessionType;
-  final int? customerId;
-  final String? memberName;
   final int? promoId;
   final String? promo;
   final Duration? duration;
-  final bool? useSavedTime;
 
   const StartSessionResult({
     required this.sessionType,
-    this.customerId,
-    this.memberName,
     this.promoId,
     this.promo,
     this.duration,
-    this.useSavedTime,
   });
 }
 
@@ -44,21 +33,13 @@ class StartSessionDialog extends StatefulWidget {
 }
 
 class _StartSessionDialogState extends State<StartSessionDialog> {
-  final _customerRepository = CustomerRepository();
   final _promoRepository = PromoRepository();
-  final _billingRepository = BillingRepository();
 
   SessionType _sessionType = SessionType.reguler;
-  Customer? _selectedCustomer;
   Promo? _selectedPromo;
   int _durationHours = 0;
   int _durationMinutes = 0;
   String? _durationError;
-
-  bool _checkingSavedTime = false;
-  SavedCustomerTime? _savedTime;
-  bool? _useSavedTime;
-  bool? _habiskanTimer;
 
   late final _hourController = TextEditingController(text: "$_durationHours");
   late final _minuteController = TextEditingController(
@@ -67,7 +48,6 @@ class _StartSessionDialogState extends State<StartSessionDialog> {
 
   bool _loading = true;
   String? _loadError;
-  List<Customer> _customers = [];
   List<Promo> _promos = [];
 
   @override
@@ -83,24 +63,19 @@ class _StartSessionDialogState extends State<StartSessionDialog> {
     });
 
     try {
-      final customerResult = await _customerRepository.getCustomers(
-        page: 1,
-        perPage: 1000,
-      );
       final promoResult = await _promoRepository.getPromos(
         page: 1,
         perPage: 1000,
       );
       if (!mounted) return;
       setState(() {
-        _customers = customerResult.customers;
         _promos = promoResult.promos;
         _loading = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _loadError = "Gagal memuat data member/promo.";
+        _loadError = "Gagal memuat data promo.";
         _loading = false;
       });
     }
@@ -121,13 +96,7 @@ class _StartSessionDialogState extends State<StartSessionDialog> {
       _selectedPromo?.type == PromoType.fixed &&
       _selectedPromo?.hourGained != null;
 
-  /// Duration fields are only free to edit when the customer isn't using
-  /// saved time, or chose to use just part of it ("Sebagian") — picking
-  /// "Habiskan" locks the fields to the full saved balance. A fixed-hour
-  /// promo locks them too, regardless of the saved-time state.
-  bool get _durationFieldsEnabled =>
-      (_useSavedTime != true || _habiskanTimer == false) &&
-      !_promoLocksDuration;
+  bool get _durationFieldsEnabled => !_promoLocksDuration;
 
   void _selectPromo(Promo? promo) {
     final lockedHours = promo?.type == PromoType.fixed
@@ -154,94 +123,14 @@ class _StartSessionDialogState extends State<StartSessionDialog> {
     });
   }
 
-  /// True when the manually-entered duration (only reachable via
-  /// "Sebagian") is more than the customer's saved time balance.
-  bool get _exceedsSavedTime {
-    final savedTime = _savedTime;
-    if (savedTime == null || _useSavedTime != true || _habiskanTimer != false) {
-      return false;
-    }
-    final duration = Duration(hours: _durationHours, minutes: _durationMinutes);
-    return duration > savedTime.timeRemaining;
-  }
-
-  String get _savedTimeErrorText =>
-      "Durasi tidak boleh melebihi sisa waktu tersimpan "
-      "(${formatDuration(_savedTime!.timeRemaining)})";
-
-  Future<void> _selectCustomer(Customer? customer) async {
-    setState(() {
-      _selectedCustomer = customer;
-      _savedTime = null;
-      _useSavedTime = null;
-      _habiskanTimer = null;
-      _checkingSavedTime = customer != null;
-    });
-
-    if (customer == null) return;
-
-    final savedTime = await _billingRepository.getSavedCustomerTime(
-      customerId: customer.id,
-      tableId: widget.table.id,
-    );
-    if (!mounted || _selectedCustomer?.id != customer.id) return;
-
-    setState(() {
-      _savedTime = savedTime != null && savedTime.hasBalance ? savedTime : null;
-      _checkingSavedTime = false;
-    });
-  }
-
-  void _setUseSavedTime(bool value) {
-    setState(() {
-      _useSavedTime = value;
-      _habiskanTimer = null;
-      _durationError = null;
-      if (value) _sessionType = SessionType.timer;
-      _durationHours = 0;
-      _durationMinutes = 0;
-      _hourController.text = "0";
-      _minuteController.text = "0";
-    });
-  }
-
-  void _setHabiskanTimer(bool value) {
-    final savedTime = _savedTime;
-    setState(() {
-      _habiskanTimer = value;
-      _durationError = null;
-      if (savedTime != null) {
-        _durationHours = savedTime.timeRemaining.inHours;
-        _durationMinutes = savedTime.timeRemaining.inMinutes % 60;
-        _hourController.text = "$_durationHours";
-        _minuteController.text = "$_durationMinutes";
-      }
-    });
-  }
-
   void _submit() {
     final isTimer = _sessionType == SessionType.timer;
-    final usingSavedTime =
-        isTimer && _useSavedTime == true && _savedTime != null;
     final duration = Duration(
       hours: _durationHours,
       minutes: _durationMinutes,
     );
 
-    if (usingSavedTime && _habiskanTimer == null) {
-      setState(
-        () => _durationError = "Pilih habiskan sisa waktu atau sebagian",
-      );
-      return;
-    }
-
-    if (_exceedsSavedTime) {
-      setState(() => _durationError = _savedTimeErrorText);
-      return;
-    }
-
-    final skipMinDuration = usingSavedTime && _habiskanTimer == true;
-    if (isTimer && !skipMinDuration && duration < _minDuration) {
+    if (isTimer && duration < _minDuration) {
       setState(
         () => _durationError =
             "Durasi sesi minimal ${_minDuration.inMinutes} menit",
@@ -252,12 +141,9 @@ class _StartSessionDialogState extends State<StartSessionDialog> {
     Navigator.of(context).pop(
       StartSessionResult(
         sessionType: _sessionType,
-        customerId: _selectedCustomer?.id,
-        memberName: _selectedCustomer?.name,
         promoId: _selectedPromo?.id,
         promo: _selectedPromo?.name,
         duration: isTimer ? duration : null,
-        useSavedTime: _savedTime != null ? (_useSavedTime ?? false) : null,
       ),
     );
   }
@@ -361,58 +247,6 @@ class _StartSessionDialogState extends State<StartSessionDialog> {
             ],
           ),
 
-          const SizedBox(height: 20),
-          _label("Nama Member (Opsional)"),
-          const SizedBox(height: 8),
-          Autocomplete<Customer>(
-            displayStringForOption: (customer) => customer.name,
-            optionsBuilder: (textEditingValue) {
-              if (textEditingValue.text.isEmpty) return _customers;
-              final query = textEditingValue.text.toLowerCase();
-              return _customers.where(
-                (customer) => customer.name.toLowerCase().contains(query),
-              );
-            },
-            onSelected: (customer) => _selectCustomer(customer),
-            fieldViewBuilder: (context, controller, focusNode, onSubmit) {
-              return TextField(
-                controller: controller,
-                focusNode: focusNode,
-                style: AppText.body,
-                decoration: _inputDecoration(
-                  hint: "Cari nama member",
-                  prefixIcon: Icons.person_outline_rounded,
-                ),
-                onChanged: (_) => _selectCustomer(null),
-              );
-            },
-            optionsViewBuilder: (context, onSelected, options) {
-              return _buildOptionsCard<Customer>(
-                context,
-                options: options,
-                onSelected: onSelected,
-                labelOf: (customer) => customer.name,
-              );
-            },
-          ),
-
-          if (_checkingSavedTime) ...[
-            const SizedBox(height: 14),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 4),
-              child: Center(
-                child: SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-            ),
-          ] else if (_savedTime != null) ...[
-            const SizedBox(height: 14),
-            _buildSavedTimeSection(_savedTime!),
-          ],
-
           if (_sessionType == SessionType.timer) ...[
             const SizedBox(height: 20),
             _label("Durasi Sesi"),
@@ -427,9 +261,6 @@ class _StartSessionDialogState extends State<StartSessionDialog> {
                     enabled: _durationFieldsEnabled,
                     onChanged: (value) => setState(() {
                       _durationHours = value;
-                      _durationError = _exceedsSavedTime
-                          ? _savedTimeErrorText
-                          : null;
                     }),
                   ),
                 ),
@@ -442,9 +273,6 @@ class _StartSessionDialogState extends State<StartSessionDialog> {
                     enabled: _durationFieldsEnabled,
                     onChanged: (value) => setState(() {
                       _durationMinutes = value;
-                      _durationError = _exceedsSavedTime
-                          ? _savedTimeErrorText
-                          : null;
                     }),
                   ),
                 ),
@@ -608,17 +436,7 @@ class _StartSessionDialogState extends State<StartSessionDialog> {
     final active = _sessionType == type;
 
     return InkWell(
-      onTap: () => setState(() {
-        _sessionType = type;
-        if (type == SessionType.reguler && _useSavedTime != null) {
-          _useSavedTime = null;
-          _habiskanTimer = null;
-          _durationHours = 0;
-          _durationMinutes = 0;
-          _hourController.text = "0";
-          _minuteController.text = "0";
-        }
-      }),
+      onTap: () => setState(() => _sessionType = type),
       borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
@@ -700,161 +518,6 @@ class _StartSessionDialogState extends State<StartSessionDialog> {
         ),
       ),
       onChanged: (text) => onChanged(int.tryParse(text) ?? 0),
-    );
-  }
-
-  Widget _buildSavedTimeSection(SavedCustomerTime savedTime) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.hourglass_bottom_rounded,
-                size: 16,
-                color: AppColors.textHint,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "${savedTime.customerName} punya sisa waktu "
-                  "${formatDuration(savedTime.timeRemaining)} "
-                  "di kategori ${savedTime.categoryMejaName}",
-                  style: AppText.caption,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text("Pakai waktu tersisa?", style: AppText.caption),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _toggleOption(
-                  label: "Ya",
-                  selected: _useSavedTime == true,
-                  onTap: () => _setUseSavedTime(true),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _toggleOption(
-                  label: "Tidak",
-                  selected: _useSavedTime == false,
-                  onTap: () => _setUseSavedTime(false),
-                ),
-              ),
-            ],
-          ),
-          if (_useSavedTime == true) ...[
-            const SizedBox(height: 12),
-            Text("Habiskan seluruh sisa waktu?", style: AppText.caption),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _toggleOption(
-                    label: "Habiskan",
-                    selected: _habiskanTimer == true,
-                    onTap: () => _setHabiskanTimer(true),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _toggleOption(
-                    label: "Sebagian",
-                    selected: _habiskanTimer == false,
-                    onTap: () => _setHabiskanTimer(false),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _toggleOption({
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.primary.withValues(alpha: .15)
-              : AppColors.card,
-          borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          border: Border.all(
-            color: selected ? AppColors.primary : AppColors.border,
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppText.body.copyWith(
-            fontWeight: FontWeight.w600,
-            color: selected ? AppColors.primary : AppColors.textSecondary,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOptionsCard<T extends Object>(
-    BuildContext context, {
-    required Iterable<T> options,
-    required void Function(T) onSelected,
-    required String Function(T) labelOf,
-  }) {
-    return Align(
-      alignment: Alignment.topLeft,
-      child: Material(
-        color: AppColors.card,
-        elevation: 8,
-        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-        child: Container(
-          width: 372,
-          constraints: const BoxConstraints(maxHeight: 220),
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: ListView.builder(
-            shrinkWrap: true,
-            padding: EdgeInsets.zero,
-            itemCount: options.length,
-            itemBuilder: (context, index) {
-              final option = options.elementAt(index);
-              return InkWell(
-                onTap: () => onSelected(option),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  child: Text(labelOf(option), style: AppText.body),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
     );
   }
 

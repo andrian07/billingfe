@@ -6,8 +6,6 @@ class CafeTransaction {
   final String invoiceNumber;
   final DateTime date;
   final String? table;
-  final int? customerId;
-  final String? customerName;
   final int paymentId;
   final String? paymentName;
   final int? promoId;
@@ -26,8 +24,6 @@ class CafeTransaction {
     required this.invoiceNumber,
     required this.date,
     this.table,
-    this.customerId,
-    this.customerName,
     required this.paymentId,
     this.paymentName,
     this.promoId,
@@ -44,7 +40,6 @@ class CafeTransaction {
 
   factory CafeTransaction.fromJson(
     Map<String, dynamic> json, {
-    String? customerName,
     String? paymentName,
     String? promoName,
   }) {
@@ -63,8 +58,6 @@ class CafeTransaction {
       invoiceNumber: json['inv']?.toString() ?? "",
       date: DateTime.tryParse(json['date']?.toString() ?? "") ?? DateTime.now(),
       table: json['table']?.toString(),
-      customerId: asOptionalId(json['customer_id']),
-      customerName: customerName,
       paymentId: asInt(json['payment_id']),
       paymentName: paymentName,
       promoId: asOptionalId(json['promo_id']),

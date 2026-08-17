@@ -4,8 +4,10 @@ import '../../core/constants/app_sizes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../features/attendance/widgets/absensi_scan_dialog.dart';
+import '../../features/billing/data/billing_repository.dart';
 import '../../features/cashier/widgets/tutup_kas_dialog.dart';
 import '../../services/session_storage.dart';
+import 'app_toast.dart';
 
 class AppHeader extends StatelessWidget {
   final String title;
@@ -100,12 +102,8 @@ class AppHeader extends StatelessWidget {
           const SizedBox(width: 8),
 
           IconButton(
-            tooltip: "Test Lampu Meja",
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Menguji lampu meja...")),
-              );
-            },
+            tooltip: "Reset Lampu",
+            onPressed: () => _resetLampu(context),
             icon: const Icon(Icons.lightbulb_outline),
           ),
 
@@ -156,6 +154,115 @@ class AppHeader extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => TutupKasDialog(userId: userId, cashierName: cashierName),
+    );
+  }
+
+  Future<void> _resetLampu(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+        ),
+        title: Text("Reset Lampu Meja?", style: AppText.title),
+        content: Text(
+          "Lampu setiap meja akan disinkronkan ulang sesuai status saat ini, "
+          "diproses satu per satu. Proses ini butuh beberapa detik dan tidak "
+          "bisa dibatalkan di tengah jalan.",
+          style: AppText.bodySecondary,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text("BATAL"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text("YA, RESET"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    // Non-dismissible: the barrier itself blocks every button underneath
+    // (tap and keyboard) for as long as the sequential relay reset is
+    // running on the backend.
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text("Mereset lampu meja...", style: AppText.body),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    String? errorMessage;
+    var resultMessage = "Reset lampu selesai";
+    try {
+      resultMessage = await BillingRepository().resetLampu();
+    } on BillingRepositoryException catch (e) {
+      errorMessage = e.message;
+    }
+
+    if (!context.mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
+
+    if (errorMessage != null) {
+      AppToast.error(context, errorMessage);
+      return;
+    }
+
+    if (!context.mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle_rounded, color: AppColors.success),
+            const SizedBox(width: 10),
+            Text("Berhasil", style: AppText.title),
+          ],
+        ),
+        content: Text(resultMessage, style: AppText.bodySecondary),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
     );
   }
 }

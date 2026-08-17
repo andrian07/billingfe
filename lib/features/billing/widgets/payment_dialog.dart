@@ -4,25 +4,21 @@ import '../../../core/constants/app_sizes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/formatters.dart';
-import '../../../models/customer.dart';
 import '../../../models/payment_method.dart';
 import '../../../models/pool_table.dart';
 import '../../../models/promo.dart';
 import '../../../services/session_storage.dart';
-import '../../customer/data/customer_repository.dart';
 import '../../payment/data/payment_method_repository.dart';
 import '../../promo/data/promo_repository.dart';
 import '../data/billing_repository.dart';
 
 class PaymentResult {
   final String paymentMethod;
-  final String? customerName;
   final String? promo;
   final int total;
 
   const PaymentResult({
     required this.paymentMethod,
-    this.customerName,
     this.promo,
     required this.total,
   });
@@ -42,15 +38,8 @@ class _PaymentDialogState extends State<PaymentDialog> {
   final _billingRepository = BillingRepository();
   final _sessionStorage = SessionStorage();
   final _paymentMethodRepository = PaymentMethodRepository();
-  final _customerRepository = CustomerRepository();
 
-  late String? _customerName = widget.table.memberName;
-  late int? _selectedCustomerId = widget.table.customerId;
   Promo? _selectedPromo;
-
-  bool _loadingCustomers = true;
-  String? _customerLoadError;
-  List<Customer> _customers = [];
 
   bool _loadingPromos = true;
   String? _promoLoadError;
@@ -68,71 +57,11 @@ class _PaymentDialogState extends State<PaymentDialog> {
   bool _submitting = false;
   String? _submitError;
 
-  bool _checkingTimeSave = false;
-  bool _canOfferSaveTime = false;
-  bool? _saveTime;
-
-  bool get _isTimerMode => widget.table.sessionType == SessionType.timer;
-
-  /// True once the table's planned end time has passed — at that point
-  /// there's no time left to carry over, so the save-time choice is locked
-  /// to "Tidak" instead of being offered.
-  bool get _timerExpired {
-    final endAt = widget.table.endAt;
-    return _isTimerMode && endAt != null && !endAt.isAfter(DateTime.now());
-  }
-
   @override
   void initState() {
     super.initState();
-    _loadCustomers();
     _loadPromos();
     _loadPaymentMethods();
-    if (_isTimerMode) {
-      if (_timerExpired) _saveTime = false;
-      _checkTimeSave();
-    }
-  }
-
-  Future<void> _loadCustomers() async {
-    setState(() {
-      _loadingCustomers = true;
-      _customerLoadError = null;
-    });
-
-    try {
-      final customers = await _customerRepository.getAllCustomers();
-      if (!mounted) return;
-      setState(() {
-        _customers = customers;
-        _loadingCustomers = false;
-      });
-    } on CustomerRepositoryException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _customerLoadError = e.message;
-        _loadingCustomers = false;
-      });
-    }
-  }
-
-  Future<void> _checkTimeSave() async {
-    setState(() => _checkingTimeSave = true);
-
-    try {
-      final canSave = await _billingRepository.checkTimeSave();
-      if (!mounted) return;
-      setState(() {
-        _canOfferSaveTime = canSave;
-        _checkingTimeSave = false;
-      });
-    } on BillingRepositoryException {
-      if (!mounted) return;
-      setState(() {
-        _canOfferSaveTime = false;
-        _checkingTimeSave = false;
-      });
-    }
   }
 
   Future<void> _loadPromos() async {
@@ -291,7 +220,6 @@ class _PaymentDialogState extends State<PaymentDialog> {
       final createdBy = session?['username']?.toString() ?? "";
       final paidBy = int.tryParse(session?['id']?.toString() ?? "") ?? 0;
       final now = DateTime.now();
-      final endAt = widget.table.endAt;
 
       await _billingRepository.submitPayment(
         tableId: widget.table.id,
@@ -307,20 +235,13 @@ class _PaymentDialogState extends State<PaymentDialog> {
         createdBy: createdBy,
         paidBy: paidBy,
         paymentId: paymentMethod.id,
-        customerId: _selectedCustomerId,
         promoId: _selectedPromo?.id,
-        saveTime: _canOfferSaveTime ? _saveTime : null,
-        remainingTime: _isTimerMode && endAt != null
-            ? (endAt.isAfter(now) ? endAt.difference(now) : Duration.zero)
-            : null,
-        usedSavedTime: widget.table.usedSavedTime,
       );
 
       if (!mounted) return;
       Navigator.of(context).pop(
         PaymentResult(
           paymentMethod: paymentMethod.name,
-          customerName: _customerName,
           promo: _selectedPromo?.name,
           total: calculation.totalTransaksi,
         ),
@@ -453,61 +374,6 @@ class _PaymentDialogState extends State<PaymentDialog> {
         ),
 
         const SizedBox(height: 20),
-        _label("Member"),
-        const SizedBox(height: 8),
-        _loadingCustomers
-            ? const Padding(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                child: Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              )
-            : _customerLoadError != null
-            ? _buildInlineError(_customerLoadError!, onRetry: _loadCustomers)
-            : Autocomplete<Customer>(
-                initialValue: TextEditingValue(text: _customerName ?? ""),
-                displayStringForOption: (customer) => customer.name,
-                optionsBuilder: (textEditingValue) {
-                  if (textEditingValue.text.isEmpty) return _customers;
-                  return _customers.where(
-                    (customer) => customer.name.toLowerCase().contains(
-                      textEditingValue.text.toLowerCase(),
-                    ),
-                  );
-                },
-                onSelected: (customer) => setState(() {
-                  _customerName = customer.name;
-                  _selectedCustomerId = customer.id;
-                }),
-                fieldViewBuilder: (context, controller, focusNode, onSubmit) {
-                  return TextField(
-                    controller: controller,
-                    focusNode: focusNode,
-                    style: AppText.body,
-                    decoration: _inputDecoration(
-                      hint: "Cari nama member",
-                      prefixIcon: Icons.person_outline_rounded,
-                    ),
-                    onChanged: (_) => setState(() {
-                      _customerName = null;
-                      _selectedCustomerId = null;
-                    }),
-                  );
-                },
-                optionsViewBuilder: (context, onSelected, options) {
-                  return _buildOptionsCard<Customer>(
-                    options: options,
-                    onSelected: onSelected,
-                    labelOf: (customer) => customer.name,
-                  );
-                },
-              ),
-
-        const SizedBox(height: 20),
         _label("Promo / Diskon"),
         const SizedBox(height: 8),
         _loadingPromos
@@ -609,24 +475,6 @@ class _PaymentDialogState extends State<PaymentDialog> {
             _label("Rincian Tagihan"),
             const SizedBox(height: 10),
             _buildBillingSummary(),
-            if (_isTimerMode && _checkingTimeSave) ...[
-              const SizedBox(height: 20),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                child: Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              ),
-            ] else if (_isTimerMode && _canOfferSaveTime) ...[
-              const SizedBox(height: 20),
-              _label("Simpan Sisa Waktu"),
-              const SizedBox(height: 10),
-              _buildSaveTimeSection(),
-            ],
           ],
         ),
         Column(
@@ -780,87 +628,6 @@ class _PaymentDialogState extends State<PaymentDialog> {
     );
   }
 
-  Widget _buildSaveTimeSection() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _kv(
-            Icons.hourglass_bottom_rounded,
-            "Sisa Waktu",
-            widget.table.timerText ?? formatDuration(Duration.zero),
-          ),
-          const SizedBox(height: 12),
-          Text("Simpan waktu untuk sesi berikutnya?", style: AppText.caption),
-          const SizedBox(height: 8),
-          if (_timerExpired)
-            Row(
-              children: [
-                Icon(
-                  Icons.block_rounded,
-                  size: 16,
-                  color: AppColors.textHint,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  "Waktu sudah habis — otomatis Tidak",
-                  style: AppText.caption,
-                ),
-              ],
-            )
-          else
-            Row(
-              children: [
-                Expanded(
-                  child: _saveTimeOption(label: "Ya", value: true),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _saveTimeOption(label: "Tidak", value: false),
-                ),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _saveTimeOption({required String label, required bool value}) {
-    final selected = _saveTime == value;
-
-    return InkWell(
-      onTap: () => setState(() => _saveTime = value),
-      borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.primary.withValues(alpha: .15)
-              : AppColors.card,
-          borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-          border: Border.all(
-            color: selected ? AppColors.primary : AppColors.border,
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppText.body.copyWith(
-            fontWeight: FontWeight.w600,
-            color: selected ? AppColors.primary : AppColors.textSecondary,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildInlineError(String message, {required VoidCallback onRetry}) {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -901,8 +668,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
         !_calculating &&
         !_submitting &&
         _calculation != null &&
-        _selectedPaymentMethod != null &&
-        (!_canOfferSaveTime || _saveTime != null);
+        _selectedPaymentMethod != null;
 
     return Container(
       decoration: BoxDecoration(
@@ -1015,48 +781,6 @@ class _PaymentDialogState extends State<PaymentDialog> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildOptionsCard<T extends Object>({
-    required Iterable<T> options,
-    required void Function(T) onSelected,
-    required String Function(T) labelOf,
-  }) {
-    return Align(
-      alignment: Alignment.topLeft,
-      child: Material(
-        color: AppColors.card,
-        elevation: 8,
-        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-        child: Container(
-          width: 372,
-          constraints: const BoxConstraints(maxHeight: 220),
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: ListView.builder(
-            shrinkWrap: true,
-            padding: EdgeInsets.zero,
-            itemCount: options.length,
-            itemBuilder: (context, index) {
-              final option = options.elementAt(index);
-              return InkWell(
-                onTap: () => onSelected(option),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  child: Text(labelOf(option), style: AppText.body),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
     );
   }
 

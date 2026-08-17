@@ -20,7 +20,6 @@ class CafeRepository {
   final Dio _dio = Dio();
 
   Future<int> submitTransactionCafe({
-    int? customerId,
     int? promoId,
     required int paymentId,
     int? table,
@@ -30,7 +29,6 @@ class CafeRepository {
     required List<CartItem> items,
   }) async {
     final data = await _post(ApiEndpoints.saveTransactionCafe, {
-      "customer_id": customerId ?? 0,
       "promo_id": promoId ?? 0,
       "payment_id": paymentId,
       "table": table,
@@ -56,14 +54,13 @@ class CafeRepository {
   ///
   /// Passing [keepTransactionId] targets an existing held transaction — the
   /// server adds [items] onto whatever it already has stored rather than
-  /// creating a new record, so header fields (table/customer/promo/payment/
-  /// tax/name) are only sent when creating a brand new one — [name] is
-  /// ignored by the server once a keep transaction already exists.
+  /// creating a new record, so header fields (table/promo/payment/tax/name)
+  /// are only sent when creating a brand new one — [name] is ignored by the
+  /// server once a keep transaction already exists.
   Future<int> keepTransaction({
     int? keepTransactionId,
     String? name,
     int? table,
-    int? customerId,
     int? promoId,
     int? paymentId,
     int tax = 0,
@@ -89,7 +86,6 @@ class CafeRepository {
         payload["name"] = name.trim();
       }
       payload["table"] = table;
-      payload["customer_id"] = customerId ?? 0;
       payload["promo_id"] = promoId ?? 0;
       payload["payment_id"] = paymentId ?? 0;
       payload["tax"] = tax;

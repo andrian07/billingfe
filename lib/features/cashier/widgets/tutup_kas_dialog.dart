@@ -267,14 +267,6 @@ class _TutupKasDialogState extends State<TutupKasDialog> {
                 summary: summary.cafe,
               ),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _sectionCard(
-                icon: Icons.savings_outlined,
-                title: "Pengisian Saldo",
-                summary: summary.saldo,
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 14),

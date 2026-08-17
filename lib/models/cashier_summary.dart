@@ -68,29 +68,24 @@ class CashierTransactionSummary {
 }
 
 /// Today's transaction summary for a logged-in cashier, combining billing
-/// (pool table), cafe/POS sales, and saldo top-ups — read via
+/// (pool table) and cafe/POS sales — read via
 /// Report/get_transaction_today_by_cashier for the "Tutup Kas" flow.
 class CashierClosingSummary {
   final DateTime businessDate;
   final int userId;
   final CashierTransactionSummary billing;
   final CashierTransactionSummary cafe;
-  final CashierTransactionSummary saldo;
 
   const CashierClosingSummary({
     required this.businessDate,
     required this.userId,
     required this.billing,
     required this.cafe,
-    this.saldo = CashierTransactionSummary.empty,
   });
 
-  /// Billing + cafe sales only — saldo top-ups are deposits, not revenue,
-  /// so they're shown as their own section rather than folded into this.
   int get totalTransaction => billing.totalTransaction + cafe.totalTransaction;
 
-  int get totalInvoiceCount =>
-      billing.invoiceCount + cafe.invoiceCount + saldo.invoiceCount;
+  int get totalInvoiceCount => billing.invoiceCount + cafe.invoiceCount;
 
   factory CashierClosingSummary.fromJson(Map<String, dynamic> json) {
     int asInt(dynamic value) {
@@ -100,7 +95,6 @@ class CashierClosingSummary {
 
     final billingJson = json['billing'];
     final cafeJson = json['cafe'];
-    final saldoJson = json['saldo'];
 
     return CashierClosingSummary(
       businessDate:
@@ -112,9 +106,6 @@ class CashierClosingSummary {
           : CashierTransactionSummary.empty,
       cafe: cafeJson is Map<String, dynamic>
           ? CashierTransactionSummary.fromJson(cafeJson)
-          : CashierTransactionSummary.empty,
-      saldo: saldoJson is Map<String, dynamic>
-          ? CashierTransactionSummary.fromJson(saldoJson)
           : CashierTransactionSummary.empty,
     );
   }

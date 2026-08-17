@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/billing/billing_page.dart';
 import '../../features/category/category_page.dart';
-import '../../features/customer/customer_page.dart';
 import '../../features/pos/pos_page.dart';
 import '../../features/product/product_page.dart';
 import '../../features/promo/promo_page.dart';
@@ -12,11 +11,8 @@ import '../../features/purchase/purchase_add_page.dart';
 import '../../features/purchase/purchase_page.dart';
 import '../../features/report/billing_report_page.dart';
 import '../../features/report/cafe_report_page.dart';
-import '../../features/report/saldo_report_page.dart';
 import '../../features/report/stock_report_page.dart';
 import '../../features/role/role_page.dart';
-import '../../features/settings/point_exchange_page.dart';
-import '../../features/settings/saldo_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/settings/table_setting_page.dart';
 import '../../features/transaction/transaction_page.dart';
@@ -95,10 +91,6 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => _fadeThroughPage(const RolePage()),
     ),
     GoRoute(
-      path: "/pelanggan",
-      pageBuilder: (context, state) => _fadeThroughPage(const CustomerPage()),
-    ),
-    GoRoute(
       path: "/pengaturan",
       pageBuilder: (context, state) => _fadeThroughPage(const SettingsPage()),
     ),
@@ -130,11 +122,6 @@ final appRouter = GoRouter(
           _fadeThroughPage(const CafeReportPage()),
     ),
     GoRoute(
-      path: "/laporan/saldo",
-      pageBuilder: (context, state) =>
-          _fadeThroughPage(const SaldoReportPage()),
-    ),
-    GoRoute(
       path: "/laporan/stok",
       pageBuilder: (context, state) =>
           _fadeThroughPage(const StockReportPage()),
@@ -151,15 +138,6 @@ final appRouter = GoRouter(
       path: "/setting/table",
       pageBuilder: (context, state) =>
           _fadeThroughPage(const TableSettingPage()),
-    ),
-    GoRoute(
-      path: "/setting/point-exchange",
-      pageBuilder: (context, state) =>
-          _fadeThroughPage(const PointExchangePage()),
-    ),
-    GoRoute(
-      path: "/setting/saldo",
-      pageBuilder: (context, state) => _fadeThroughPage(const SaldoPage()),
     ),
   ],
 );

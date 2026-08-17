@@ -12,15 +12,12 @@ class PoolTable {
   final String? timerText;
   final String? endTime;
   final SessionType? sessionType;
-  final int? customerId;
-  final String? memberName;
   final int? promoId;
   final String? promoName;
   final DateTime? startAt;
   final DateTime? endAt;
   final Duration? plannedDuration;
   final int? currentBill;
-  final bool? usedSavedTime;
 
   const PoolTable({
     required this.id,
@@ -32,15 +29,12 @@ class PoolTable {
     this.timerText,
     this.endTime,
     this.sessionType,
-    this.customerId,
-    this.memberName,
     this.promoId,
     this.promoName,
     this.startAt,
     this.endAt,
     this.plannedDuration,
     this.currentBill,
-    this.usedSavedTime,
   });
 
   PoolTable copyWith({
@@ -50,15 +44,12 @@ class PoolTable {
     String? timerText,
     String? endTime,
     SessionType? sessionType,
-    int? customerId,
-    String? memberName,
     int? promoId,
     String? promoName,
     DateTime? startAt,
     DateTime? endAt,
     Duration? plannedDuration,
     int? currentBill,
-    bool? usedSavedTime,
   }) {
     return PoolTable(
       id: id,
@@ -70,15 +61,12 @@ class PoolTable {
       timerText: timerText ?? this.timerText,
       endTime: endTime ?? this.endTime,
       sessionType: sessionType ?? this.sessionType,
-      customerId: customerId ?? this.customerId,
-      memberName: memberName ?? this.memberName,
       promoId: promoId ?? this.promoId,
       promoName: promoName ?? this.promoName,
       startAt: startAt ?? this.startAt,
       endAt: endAt ?? this.endAt,
       plannedDuration: plannedDuration ?? this.plannedDuration,
       currentBill: currentBill ?? this.currentBill,
-      usedSavedTime: usedSavedTime ?? this.usedSavedTime,
     );
   }
 }

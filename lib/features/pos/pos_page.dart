@@ -9,11 +9,13 @@ import '../../models/cart_item.dart';
 import '../../models/keep_transaction.dart';
 import '../../models/product.dart';
 import '../../models/product_category.dart';
+import '../../services/receipt_printer_service.dart';
 import '../../services/session_storage.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_layout.dart';
 import '../../shared/widgets/app_toast.dart';
 import '../product/data/product_repository.dart';
+import 'data/cafe_invoice_repository.dart';
 import 'data/cafe_repository.dart';
 import 'widgets/cafe_payment_dialog.dart';
 import 'widgets/cart_item_note_dialog.dart';
@@ -35,6 +37,8 @@ class PosPage extends StatefulWidget {
 class _PosPageState extends State<PosPage> {
   final _repository = ProductRepository();
   final _cafeRepository = CafeRepository();
+  final _cafeInvoiceRepository = CafeInvoiceRepository();
+  final _receiptPrinter = ReceiptPrinterService();
   final _sessionStorage = SessionStorage();
   final _searchController = TextEditingController();
 
@@ -183,9 +187,12 @@ class _PosPageState extends State<PosPage> {
   }
 
   Future<void> _checkout() async {
+    final items = _cartItems;
+    final subtotal = _subtotal;
+
     final result = await showDialog<CafePaymentResult>(
       context: context,
-      builder: (_) => CafePaymentDialog(items: _cartItems, subtotal: _subtotal),
+      builder: (_) => CafePaymentDialog(items: items, subtotal: subtotal),
     );
     if (result == null) return;
     if (!mounted) return;
@@ -200,6 +207,21 @@ class _PosPageState extends State<PosPage> {
       "Transaksi cafe berhasil (#${result.transactionCafeId})",
     );
     await _refreshProductStock();
+
+    try {
+      final session = await _sessionStorage.getSession();
+      final cashierName = session?['username']?.toString() ?? "Kasir";
+      final receipt = await _cafeInvoiceRepository.generateInvoice(
+        items: items,
+        subtotal: subtotal,
+        payment: result,
+        cashierName: cashierName,
+      );
+      await _receiptPrinter.printCafeReceipt(receipt);
+    } on ReceiptPrinterException catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, "Gagal mencetak struk: $e");
+    }
   }
 
   /// Re-fetches the product list after a sale so displayed stock reflects

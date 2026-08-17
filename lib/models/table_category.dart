@@ -6,8 +6,10 @@ class TableCategory {
   final String name;
   final bool active;
 
-  /// Which of the 5 price columns from Pengaturan Harga (price1..price5)
-  /// this category bills at — 1 to 5.
+  /// Which of the 5 backend price tiers (master_price_price..price_5) this
+  /// category bills at — 1 to 5. Only tier 1 ("Harga") is editable from the
+  /// Pengaturan Harga page; tiers 2-5 exist server-side for categories that
+  /// pick them here but aren't otherwise surfaced in the app.
   final int priceOption;
 
   const TableCategory({

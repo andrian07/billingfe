@@ -10,7 +10,6 @@ import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_layout.dart';
 import 'data/transaction_repository.dart';
 import 'widgets/cafe_transaction_list.dart';
-import 'widgets/saldo_transaction_list.dart';
 import 'widgets/transaction_detail_dialog.dart';
 
 class TransactionPage extends StatefulWidget {
@@ -22,7 +21,7 @@ class TransactionPage extends StatefulWidget {
 
 enum _SortField { date, total }
 
-enum _TransactionTab { billing, cafe, saldo }
+enum _TransactionTab { billing, cafe }
 
 class _TransactionPageState extends State<TransactionPage> {
   static const _pageSize = 10;
@@ -105,7 +104,6 @@ class _TransactionPageState extends State<TransactionPage> {
 
       return t.invoiceNumber.toLowerCase().contains(query) ||
           t.tableName.toLowerCase().contains(query) ||
-          (t.customerName?.toLowerCase().contains(query) ?? false) ||
           (t.promoName?.toLowerCase().contains(query) ?? false) ||
           t.cashierName.toLowerCase().contains(query) ||
           formatDate(t.date).contains(query);
@@ -221,11 +219,6 @@ class _TransactionPageState extends State<TransactionPage> {
           padding: EdgeInsets.zero,
           child: const CafeTransactionList(),
         );
-      case _TransactionTab.saldo:
-        return AppCard(
-          padding: EdgeInsets.zero,
-          child: const SaldoTransactionList(),
-        );
     }
   }
 
@@ -235,12 +228,6 @@ class _TransactionPageState extends State<TransactionPage> {
         _tabChip(_TransactionTab.billing, "Billing", Icons.receipt_long_outlined),
         const SizedBox(width: 10),
         _tabChip(_TransactionTab.cafe, "Cafe", Icons.local_cafe_outlined),
-        const SizedBox(width: 10),
-        _tabChip(
-          _TransactionTab.saldo,
-          "Pengisian Saldo",
-          Icons.savings_outlined,
-        ),
       ],
     );
   }
@@ -318,7 +305,7 @@ class _TransactionPageState extends State<TransactionPage> {
               style: AppText.bodySecondary,
               decoration: const InputDecoration(
                 isDense: true,
-                hintText: "Cari no. invoice, meja, member, kasir...",
+                hintText: "Cari no. invoice, meja, kasir...",
                 prefixIcon: Icon(Icons.search, size: 18),
                 prefixIconConstraints: BoxConstraints(
                   minWidth: 34,
@@ -618,7 +605,6 @@ class _TransactionRow extends StatelessWidget {
         jamMulai: _headerText("Jam Mulai"),
         jamSelesai: _headerText("Jam Selesai"),
         meja: _headerText("Meja"),
-        pelanggan: _headerText("Member"),
         promo: _headerText("Promo"),
         kasir: _headerText("Kasir"),
         total: _sortableHeaderText(
@@ -656,10 +642,6 @@ class _TransactionRow extends StatelessWidget {
           jamMulai: Text(formatTime(t.startAt), style: cellStyle),
           jamSelesai: Text(formatTime(t.endAt), style: cellStyle),
           meja: Text(t.tableName, style: cellStyle),
-          pelanggan: Text(
-            t.customerName ?? "-",
-            style: cellStyle,
-          ),
           promo: Text(
             t.promoName ?? "-",
             maxLines: 1,
@@ -772,7 +754,6 @@ class _TransactionRow extends StatelessWidget {
     required Widget jamMulai,
     required Widget jamSelesai,
     required Widget meja,
-    required Widget pelanggan,
     required Widget promo,
     required Widget kasir,
     required Widget total,
@@ -792,8 +773,6 @@ class _TransactionRow extends StatelessWidget {
         Expanded(flex: 1, child: jamSelesai),
         const SizedBox(width: 12),
         Expanded(flex: 1, child: meja),
-        const SizedBox(width: 12),
-        Expanded(flex: 2, child: pelanggan),
         const SizedBox(width: 12),
         Expanded(flex: 2, child: promo),
         const SizedBox(width: 12),

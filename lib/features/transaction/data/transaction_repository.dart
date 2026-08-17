@@ -5,9 +5,7 @@ import 'package:dio/dio.dart';
 import '../../../core/constants/api_endpoints.dart';
 import '../../../models/cafe_transaction.dart';
 import '../../../models/pagination_info.dart';
-import '../../../models/saldo_transaction.dart';
 import '../../../models/transaction.dart';
-import '../../customer/data/customer_repository.dart';
 import '../../payment/data/payment_method_repository.dart';
 import '../../promo/data/promo_repository.dart';
 
@@ -30,21 +28,10 @@ class CafeTransactionListResult {
   });
 }
 
-class SaldoTransactionListResult {
-  final List<SaldoTransaction> transactions;
-  final PaginationInfo pagination;
-
-  const SaldoTransactionListResult({
-    required this.transactions,
-    required this.pagination,
-  });
-}
-
 /// Reads completed/cancelled transaction history via Billing/transaction_list
 /// and Billing/transaction_detail.
 class TransactionRepository {
   final Dio _dio = Dio();
-  final _customerRepository = CustomerRepository();
   final _promoRepository = PromoRepository();
   final _paymentMethodRepository = PaymentMethodRepository();
 
@@ -69,23 +56,16 @@ class TransactionRepository {
       return id != null && id != 0;
     });
 
-    final customerNames = hasId('customer_id')
-        ? await _fetchCustomerNames()
-        : const <int, String>{};
     final promoNames = hasId('promo_id')
         ? await _fetchPromoNames()
         : const <int, String>{};
     final paymentNames = await _fetchPaymentNames();
 
     return transactions.map((json) {
-      final customerId = int.tryParse(json['customer_id']?.toString() ?? "");
       final promoId = int.tryParse(json['promo_id']?.toString() ?? "");
       final paymentId = int.tryParse(json['payment_id']?.toString() ?? "");
       return Transaction.fromJson(
         json,
-        customerName: (customerId != null && customerId != 0)
-            ? customerNames[customerId]
-            : null,
         promoName: (promoId != null && promoId != 0)
             ? promoNames[promoId]
             : null,
@@ -139,23 +119,16 @@ class TransactionRepository {
       return id != null && id != 0;
     });
 
-    final customerNames = hasId('customer_id')
-        ? await _fetchCustomerNames()
-        : const <int, String>{};
     final promoNames = hasId('promo_id')
         ? await _fetchPromoNames()
         : const <int, String>{};
     final paymentNames = await _fetchPaymentNames();
 
     final transactions = rowsJson.map((json) {
-      final customerId = int.tryParse(json['customer_id']?.toString() ?? "");
       final promoId = int.tryParse(json['promo_id']?.toString() ?? "");
       final paymentId = int.tryParse(json['payment_id']?.toString() ?? "");
       return CafeTransaction.fromJson(
         json,
-        customerName: (customerId != null && customerId != 0)
-            ? customerNames[customerId]
-            : null,
         promoName: (promoId != null && promoId != 0)
             ? promoNames[promoId]
             : null,
@@ -172,51 +145,6 @@ class TransactionRepository {
       transactions: transactions,
       pagination: pagination,
     );
-  }
-
-  Future<SaldoTransactionListResult> getSaldoTransactions({
-    int page = 1,
-    int perPage = 20,
-  }) async {
-    final data = await _post(ApiEndpoints.transactionSaldoList, {
-      "page": page,
-      "per_page": perPage,
-    });
-
-    final result = data['result'];
-    final rows = result is Map<String, dynamic> ? result['data'] : null;
-    if (rows is! List) {
-      throw const TransactionRepositoryException(
-        "Format respons transaksi saldo tidak valid.",
-      );
-    }
-
-    final transactions = rows
-        .whereType<Map<String, dynamic>>()
-        .map(SaldoTransaction.fromJson)
-        .toList();
-
-    final paginationJson = result['pagination'];
-    final pagination = paginationJson is Map<String, dynamic>
-        ? PaginationInfo.fromJson(paginationJson)
-        : PaginationInfo.empty;
-
-    return SaldoTransactionListResult(
-      transactions: transactions,
-      pagination: pagination,
-    );
-  }
-
-  Future<Map<int, String>> _fetchCustomerNames() async {
-    try {
-      final result = await _customerRepository.getCustomers(
-        page: 1,
-        perPage: 1000,
-      );
-      return {for (final c in result.customers) c.id: c.name};
-    } catch (_) {
-      return const {};
-    }
   }
 
   Future<Map<int, String>> _fetchPromoNames() async {

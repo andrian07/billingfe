@@ -7,17 +7,15 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/app_user.dart';
-import '../../models/customer.dart';
 import '../../models/report.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_layout.dart';
 import '../../shared/widgets/app_toast.dart';
-import '../customer/data/customer_repository.dart';
 import '../user/data/user_repository.dart';
 import 'data/report_repository.dart';
 
 /// Rekap transaksi cafe/POS — Report/cafe_report, dengan filter tanggal
-/// (wajib), member, dan kasir, serta export ke Excel/PDF.
+/// (wajib) dan kasir, serta export ke Excel/PDF.
 class CafeReportPage extends StatefulWidget {
   const CafeReportPage({super.key});
 
@@ -27,15 +25,12 @@ class CafeReportPage extends StatefulWidget {
 
 class _CafeReportPageState extends State<CafeReportPage> {
   final _repository = ReportRepository();
-  final _customerRepository = CustomerRepository();
   final _userRepository = UserRepository();
 
   late DateTime _dateFrom;
   late DateTime _dateTo;
-  Customer? _selectedCustomer;
   AppUser? _selectedKasir;
 
-  List<Customer> _customers = [];
   List<AppUser> _kasirs = [];
 
   bool _loading = true;
@@ -58,14 +53,9 @@ class _CafeReportPageState extends State<CafeReportPage> {
 
   Future<void> _loadFiltersAndReport() async {
     try {
-      final customers = await _customerRepository.getCustomers(
-        page: 1,
-        perPage: 500,
-      );
       final users = await _userRepository.getUsers(page: 1, perPage: 500);
       if (!mounted) return;
       setState(() {
-        _customers = customers.customers;
         _kasirs = users.users;
       });
     } catch (_) {
@@ -85,7 +75,6 @@ class _CafeReportPageState extends State<CafeReportPage> {
       final result = await _repository.getCafeReport(
         dateFrom: _dateFrom,
         dateTo: _dateTo,
-        customerId: _selectedCustomer?.id,
         paidBy: _selectedKasir?.id,
       );
       if (!mounted) return;
@@ -139,7 +128,6 @@ class _CafeReportPageState extends State<CafeReportPage> {
       final file = await _repository.exportCafeReport(
         dateFrom: _dateFrom,
         dateTo: _dateTo,
-        customerId: _selectedCustomer?.id,
         paidBy: _selectedKasir?.id,
         type: type,
       );
@@ -204,7 +192,6 @@ class _CafeReportPageState extends State<CafeReportPage> {
       children: [
         _dateField(label: "Dari Tanggal", value: _dateFrom, onTap: _pickDateFrom),
         _dateField(label: "Sampai Tanggal", value: _dateTo, onTap: _pickDateTo),
-        SizedBox(width: 220, child: _customerDropdown()),
         SizedBox(width: 200, child: _kasirDropdown()),
         SizedBox(
           height: 42,
@@ -313,35 +300,6 @@ class _CafeReportPageState extends State<CafeReportPage> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _customerDropdown() {
-    return DropdownButtonFormField<Customer?>(
-      initialValue: _selectedCustomer,
-      dropdownColor: AppColors.card,
-      style: AppText.caption,
-      isExpanded: true,
-      icon: const Icon(
-        Icons.keyboard_arrow_down_rounded,
-        color: AppColors.textSecondary,
-      ),
-      decoration: _filterDecoration(
-        hint: "Semua Member",
-        icon: Icons.person_outline_rounded,
-      ),
-      items: [
-        const DropdownMenuItem<Customer?>(
-          value: null,
-          child: Text("Semua Member"),
-        ),
-        for (final customer in _customers)
-          DropdownMenuItem<Customer?>(
-            value: customer,
-            child: Text(customer.name, overflow: TextOverflow.ellipsis),
-          ),
-      ],
-      onChanged: (value) => setState(() => _selectedCustomer = value),
     );
   }
 
@@ -551,7 +509,6 @@ class _CafeReportRowWidget extends StatelessWidget {
         invoice: _headerText("No. Invoice"),
         tanggal: _headerText("Tanggal"),
         jam: _headerText("Jam"),
-        member: _headerText("Member"),
         kasir: _headerText("Kasir"),
         payment: _headerText("Pembayaran"),
         subTotal: _headerText("Subtotal", alignEnd: true),
@@ -578,12 +535,6 @@ class _CafeReportRowWidget extends StatelessWidget {
         ),
         tanggal: Text(formatDate(r.date), style: cellStyle),
         jam: Text(formatTime(r.time), style: cellStyle),
-        member: Text(
-          r.memberName ?? "-",
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: cellStyle,
-        ),
         kasir: Text(r.kasirName, maxLines: 1, overflow: TextOverflow.ellipsis, style: cellStyle),
         payment: Text(r.paymentName, style: cellStyle),
         subTotal: Text(
@@ -648,7 +599,6 @@ class _CafeReportRowWidget extends StatelessWidget {
     required Widget invoice,
     required Widget tanggal,
     required Widget jam,
-    required Widget member,
     required Widget kasir,
     required Widget payment,
     required Widget subTotal,
@@ -666,8 +616,6 @@ class _CafeReportRowWidget extends StatelessWidget {
         Expanded(flex: 2, child: tanggal),
         const SizedBox(width: 10),
         Expanded(flex: 1, child: jam),
-        const SizedBox(width: 10),
-        Expanded(flex: 2, child: member),
         const SizedBox(width: 10),
         Expanded(flex: 2, child: kasir),
         const SizedBox(width: 10),

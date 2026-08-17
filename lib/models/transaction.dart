@@ -9,7 +9,6 @@ class Transaction {
   final DateTime startAt;
   final DateTime endAt;
   final String tableName;
-  final String? customerName;
   final String? promoName;
   final String cashierName;
   final String paymentMethod;
@@ -23,7 +22,6 @@ class Transaction {
     required this.startAt,
     required this.endAt,
     required this.tableName,
-    this.customerName,
     this.promoName,
     required this.cashierName,
     required this.paymentMethod,
@@ -33,7 +31,6 @@ class Transaction {
 
   factory Transaction.fromJson(
     Map<String, dynamic> json, {
-    String? customerName,
     String? promoName,
     String? paymentMethodName,
   }) {
@@ -47,7 +44,6 @@ class Transaction {
       startAt: _combineDateTime(date, json['start_time']?.toString()),
       endAt: _combineDateTime(date, json['end_time']?.toString()),
       tableName: "Meja ${tableNumber.toString().padLeft(2, '0')}",
-      customerName: customerName,
       promoName: promoName,
       cashierName: json['created_by']?.toString() ?? "",
       paymentMethod: paymentMethodName ?? "-",
@@ -58,8 +54,8 @@ class Transaction {
 }
 
 /// Detail of a single transaction — Billing/transaction_detail already
-/// resolves the member name and full promo object server-side, so unlike the
-/// list endpoint no separate customer/promo lookup is needed here.
+/// resolves the full promo object server-side, so unlike the list endpoint
+/// no separate promo lookup is needed here.
 class TransactionDetail {
   final int id;
   final String invoiceNumber;
@@ -76,7 +72,6 @@ class TransactionDetail {
   final String createdBy;
   final int paidBy;
   final String paymentMethod;
-  final String? memberName;
   final String? promoName;
 
   const TransactionDetail({
@@ -95,7 +90,6 @@ class TransactionDetail {
     required this.createdBy,
     required this.paidBy,
     required this.paymentMethod,
-    this.memberName,
     this.promoName,
   });
 
@@ -123,7 +117,6 @@ class TransactionDetail {
       createdBy: json['created_by']?.toString() ?? "",
       paidBy: _asInt(json['paid_by']),
       paymentMethod: paymentMethodName ?? "-",
-      memberName: json['member_name']?.toString(),
       promoName: promoJson is Map<String, dynamic>
           ? promoJson['name']?.toString()
           : null,

@@ -6,7 +6,6 @@ class KeepTransaction {
   final String invoiceNumber;
   final DateTime date;
   final int? table;
-  final int? customerId;
   final int paymentId;
   final int promoId;
   final int subTotal;
@@ -23,7 +22,6 @@ class KeepTransaction {
     required this.invoiceNumber,
     required this.date,
     this.table,
-    this.customerId,
     required this.paymentId,
     required this.promoId,
     required this.subTotal,
@@ -44,7 +42,6 @@ class KeepTransaction {
       invoiceNumber: json['inv']?.toString() ?? "",
       date: DateTime.tryParse(json['date']?.toString() ?? "") ?? DateTime.now(),
       table: _asIntOrNull(json['table']),
-      customerId: _asIntOrNull(json['customer_id']),
       paymentId: _asInt(json['payment_id']),
       promoId: _asInt(json['promo_id']),
       subTotal: _asInt(json['sub_total']),
@@ -102,7 +99,6 @@ class KeepTransactionDetail extends KeepTransaction {
     required super.invoiceNumber,
     required super.date,
     super.table,
-    super.customerId,
     required super.paymentId,
     required super.promoId,
     required super.subTotal,
@@ -125,7 +121,6 @@ class KeepTransactionDetail extends KeepTransaction {
       invoiceNumber: base.invoiceNumber,
       date: base.date,
       table: base.table,
-      customerId: base.customerId,
       paymentId: base.paymentId,
       promoId: base.promoId,
       subTotal: base.subTotal,

@@ -5,7 +5,6 @@ import 'package:dio/dio.dart';
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/pool_table.dart';
-import '../../customer/data/customer_repository.dart';
 import '../../promo/data/promo_repository.dart';
 
 class TableRepositoryException implements Exception {
@@ -23,11 +22,10 @@ class TableRepositoryException implements Exception {
 /// other endpoints), `table_number` is the human-facing table number,
 /// `table_active` tells whether a session is currently running on it, and
 /// `is_active` tells whether the table should be shown at all. A table can
-/// also carry a booking (`table_mode`, customer, promo, start/end time,
-/// duration, running bill) before it's actually marked active.
+/// also carry a booking (`table_mode`, promo, start/end time, duration,
+/// running bill) before it's actually marked active.
 class TableRepository {
   final Dio _dio = Dio();
-  final _customerRepository = CustomerRepository();
   final _promoRepository = PromoRepository();
 
   Future<List<PoolTable>> getTables() async {
@@ -53,42 +51,22 @@ class TableRepository {
           .where((json) => json['is_active']?.toString() == "1")
           .toList();
 
-      final needsCustomerNames = rows.any(
-        (json) => json['table_customer_id'] != null,
-      );
       final needsPromoNames = rows.any((json) {
         final promoId = int.tryParse(json['table_promo_id']?.toString() ?? "");
         return promoId != null && promoId != 0;
       });
 
-      final customerNames = needsCustomerNames
-          ? await _fetchCustomerNames()
-          : const <int, String>{};
       final promoNames = needsPromoNames
           ? await _fetchPromoNames()
           : const <int, String>{};
 
-      return rows
-          .map((json) => _tableFromJson(json, customerNames, promoNames))
-          .toList();
+      return rows.map((json) => _tableFromJson(json, promoNames)).toList();
     } on TableRepositoryException {
       rethrow;
     } on DioException catch (_) {
       throw const TableRepositoryException(
         "Tidak dapat terhubung ke server. Periksa koneksi Anda.",
       );
-    }
-  }
-
-  Future<Map<int, String>> _fetchCustomerNames() async {
-    try {
-      final result = await _customerRepository.getCustomers(
-        page: 1,
-        perPage: 1000,
-      );
-      return {for (final c in result.customers) c.id: c.name};
-    } catch (_) {
-      return const {};
     }
   }
 
@@ -103,15 +81,11 @@ class TableRepository {
 
   PoolTable _tableFromJson(
     Map<String, dynamic> json,
-    Map<int, String> customerNames,
     Map<int, String> promoNames,
   ) {
     final isRunning = json['table_active']?.toString() == "1";
     final number = json['table_number']?.toString() ?? "";
     final mode = json['table_mode']?.toString();
-    final customerId = int.tryParse(
-      json['table_customer_id']?.toString() ?? "",
-    );
     final promoId = int.tryParse(json['table_promo_id']?.toString() ?? "");
     final startAt = _parseDateTime(json['table_start_time']?.toString());
     final endAt = _parseDateTime(json['table_end_time']?.toString());
@@ -128,9 +102,6 @@ class TableRepository {
       startAt: startAt,
       endAt: endAt,
       plannedDuration: _parseDuration(json['table_duration']?.toString()),
-      usedSavedTime: _parseYesNo(json['use_saved_time']?.toString()),
-      customerId: (customerId != null && customerId != 0) ? customerId : null,
-      memberName: customerId != null ? customerNames[customerId] : null,
       promoId: (promoId != null && promoId != 0) ? promoId : null,
       promoName: (promoId != null && promoId != 0)
           ? promoNames[promoId]
@@ -149,11 +120,6 @@ class TableRepository {
       default:
         return null;
     }
-  }
-
-  bool? _parseYesNo(String? value) {
-    if (value == null || value.trim().isEmpty) return null;
-    return value.trim().toUpperCase() == "Y";
   }
 
   DateTime? _parseDateTime(String? value) {

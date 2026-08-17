@@ -4,16 +4,13 @@
 /// covering the four separate report pages. Codes not listed here are
 /// assumed to equal their menuKey directly (e.g. "meja", "produk").
 const Map<String, List<String>> menuCodeAliases = {
-  'master_member': ['pelanggan'],
   'master_pengguna': ['pengguna'],
   'master_role': ['role'],
   'master_promo': ['promo'],
   'harga_meja': ['pengaturan'],
-  'tukar_point': ['setting_point_exchange'],
   'Laporan': [
     'laporan_billing',
     'laporan_cafe',
-    'laporan_saldo',
     'laporan_stok',
   ],
 };

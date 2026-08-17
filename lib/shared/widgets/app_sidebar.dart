@@ -47,11 +47,6 @@ class AppSidebar extends StatelessWidget {
       title: "MASTER",
       items: [
         AppMenuItem(
-          title: "Member",
-          icon: Icons.people_alt_outlined,
-          menuKey: "pelanggan",
-        ),
-        AppMenuItem(
           title: "Pengguna",
           icon: Icons.manage_accounts_outlined,
           menuKey: "pengguna",
@@ -107,11 +102,6 @@ class AppSidebar extends StatelessWidget {
           menuKey: "laporan_cafe",
         ),
         AppMenuItem(
-          title: "Laporan Saldo",
-          icon: Icons.savings_outlined,
-          menuKey: "laporan_saldo",
-        ),
-        AppMenuItem(
           title: "Laporan Stok",
           icon: Icons.bar_chart_rounded,
           menuKey: "laporan_stok",
@@ -130,11 +120,6 @@ class AppSidebar extends StatelessWidget {
           title: "Table",
           icon: Icons.settings_input_component_rounded,
           menuKey: "setting_table",
-        ),
-        AppMenuItem(
-          title: "Tukar Point",
-          icon: Icons.card_giftcard_rounded,
-          menuKey: "setting_point_exchange",
         ),
       ],
     ),

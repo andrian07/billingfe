@@ -248,14 +248,6 @@ class _TransactionDetailDialogState extends State<TransactionDetailDialog> {
                 "Kasir",
                 detail.createdBy,
               ),
-              if (detail.memberName != null) ...[
-                const SizedBox(height: 10),
-                _kv(
-                  Icons.badge_outlined,
-                  "Member",
-                  detail.memberName!,
-                ),
-              ],
               if (detail.promoName != null) ...[
                 const SizedBox(height: 10),
                 _kv(

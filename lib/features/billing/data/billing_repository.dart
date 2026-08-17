@@ -5,7 +5,6 @@ import 'package:dio/dio.dart';
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/pool_table.dart';
-import '../../../models/saved_customer_time.dart';
 
 class BillingRepositoryException implements Exception {
   final String message;
@@ -56,47 +55,20 @@ class BillingRepository {
     required String tableId,
     required SessionType mode,
     required DateTime startTime,
-    int? customerId,
     int? promoId,
     DateTime? endTime,
     Duration? duration,
-    bool? useSavedTime,
   }) async {
     final payload = <String, dynamic>{
       "table_id": tableId,
       "table_mode": mode == SessionType.timer ? "Timer" : "Reguler",
       "table_start_time": formatApiDateTime(startTime),
-      if (customerId != null) "table_customer_id": "$customerId",
       if (promoId != null) "table_promo_id": "$promoId",
       if (endTime != null) "table_end_time": formatApiDateTime(endTime),
       if (duration != null) "table_duration": formatDuration(duration),
-      if (useSavedTime != null) "use_saved_time": useSavedTime ? "Y" : "N",
     };
 
     await _post(ApiEndpoints.bookTable, payload);
-  }
-
-  /// Looks up a customer's banked play time for the given table's category
-  /// via Master/get_save_customer_time — used by the start-session dialog to
-  /// offer "pakai waktu tersisa?" when a member with a balance is selected.
-  /// Returns null when the lookup itself fails (e.g. table/category not
-  /// set up), since that just means no saved-time offer should be shown.
-  Future<SavedCustomerTime?> getSavedCustomerTime({
-    required int customerId,
-    required String tableId,
-  }) async {
-    try {
-      final data = await _post(ApiEndpoints.getSaveCustomerTime, {
-        "customer_id": customerId,
-        "table_id": int.tryParse(tableId) ?? tableId,
-      });
-
-      final result = data['result'];
-      if (result is! Map<String, dynamic>) return null;
-      return SavedCustomerTime.fromJson(result);
-    } on BillingRepositoryException {
-      return null;
-    }
   }
 
   Future<PriceCalculation> calculatePrice({required String tableId}) async {
@@ -112,19 +84,6 @@ class BillingRepository {
     }
 
     return PriceCalculation.fromJson(result);
-  }
-
-  /// Checks whether the "simpan sisa waktu" (save remaining time) choice
-  /// should be offered on the payment summary for timer-mode tables.
-  Future<bool> checkTimeSave() async {
-    final data = await _post(ApiEndpoints.checkTimeSave, const {});
-
-    final result = data['result'];
-    final flag = result is Map<String, dynamic>
-        ? result['check_time_save']
-        : data['check_time_save'];
-
-    return flag?.toString().toUpperCase() == "Y";
   }
 
   Future<void> addDuration({
@@ -149,6 +108,17 @@ class BillingRepository {
     });
   }
 
+  /// Re-signals every table's physical relay/lamp to match its current
+  /// `table_active` state in the database — used after the relay
+  /// reader/power restarts and the physical lamps fall out of sync with the
+  /// system. The backend processes tables sequentially (table 1 onward)
+  /// with a pause between each, so this can take several seconds and only
+  /// resolves once every table has been signaled.
+  Future<String> resetLampu() async {
+    final data = await _post(ApiEndpoints.resetLampu, const {});
+    return data['result']?.toString() ?? "Reset lampu selesai";
+  }
+
   Future<void> moveTable({
     required String fromTableId,
     required String toTableId,
@@ -171,32 +141,22 @@ class BillingRepository {
     required String createdBy,
     required int paidBy,
     required int paymentId,
-    int? customerId,
     int? promoId,
-    bool? saveTime,
-    Duration? remainingTime,
-    bool? usedSavedTime,
   }) async {
     await _post(ApiEndpoints.payment, {
       if (mode != null)
         "transaction_mode": mode == SessionType.timer ? "Timer" : "Reguler",
-      if (customerId != null) "transaction_customer_id": "$customerId",
       "transaction_payment_id": "$paymentId",
       if (promoId != null) "transaction_promo_id": "$promoId",
       "transaction_start_time": formatApiDateTime(startTime),
       "transaction_end_time": formatApiDateTime(endTime),
       "transaction_duration": formatDuration(duration),
-      if (remainingTime != null)
-        "transaction_remaining_time": formatDuration(remainingTime),
       "transaction_sub_total": "$subTotal",
       "transaction_tax": "$tax",
       "transaction_total_bill": "$totalBill",
       "transaction_table": tableId,
       "created_by": createdBy,
       "paid_by": "$paidBy",
-      if (saveTime != null) "save_time": saveTime ? "Y" : "N",
-      if (usedSavedTime != null)
-        "used_save_time": usedSavedTime ? "Y" : "N",
     });
   }
 

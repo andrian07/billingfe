@@ -114,14 +114,7 @@ class _SettingsPageState extends State<SettingsPage> {
     if (result == null) return;
 
     try {
-      await _repository.editPrice(
-        id: item.id,
-        price1: result.price1,
-        price2: result.price2,
-        price3: result.price3,
-        price4: result.price4,
-        price5: result.price5,
-      );
+      await _repository.editPrice(id: item.id, price: result.price);
       if (!mounted) return;
       AppToast.success(
         context,
@@ -130,13 +123,7 @@ class _SettingsPageState extends State<SettingsPage> {
       setState(() {
         final index = _prices.indexWhere((p) => p.id == item.id);
         if (index != -1) {
-          _prices[index] = item.copyWith(
-            price1: result.price1,
-            price2: result.price2,
-            price3: result.price3,
-            price4: result.price4,
-            price5: result.price5,
-          );
+          _prices[index] = item.copyWith(price: result.price);
         }
       });
     } on PriceRepositoryException catch (e) {
@@ -226,9 +213,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
 
     final grouped = _grouped;
-    // Single column — with all 5 price columns shown, a day's table needs
-    // the full width to stay readable.
-    const columns = 1;
+    const columns = 2;
     const spacing = 14.0;
 
     return SingleChildScrollView(
@@ -455,23 +440,7 @@ class _DaySection extends StatelessWidget {
       children: [
         SizedBox(width: 96, child: Text("JAM", style: style)),
         Expanded(
-          child: Text("HARGA 1", textAlign: TextAlign.end, style: style),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Text("HARGA 2", textAlign: TextAlign.end, style: style),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Text("HARGA 3", textAlign: TextAlign.end, style: style),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Text("HARGA 4", textAlign: TextAlign.end, style: style),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Text("HARGA 5", textAlign: TextAlign.end, style: style),
+          child: Text("HARGA", textAlign: TextAlign.end, style: style),
         ),
         const SizedBox(width: 44),
       ],
@@ -502,39 +471,7 @@ class _DaySection extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              formatCurrency(item.price1),
-              textAlign: TextAlign.end,
-              style: cellStyle,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              formatCurrency(item.price2),
-              textAlign: TextAlign.end,
-              style: cellStyle,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              formatCurrency(item.price3),
-              textAlign: TextAlign.end,
-              style: cellStyle,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              formatCurrency(item.price4),
-              textAlign: TextAlign.end,
-              style: cellStyle,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              formatCurrency(item.price5),
+              formatCurrency(item.price),
               textAlign: TextAlign.end,
               style: cellStyle,
             ),

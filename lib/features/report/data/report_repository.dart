@@ -32,13 +32,11 @@ class ReportRepository {
   Future<BillingReportResult> getBillingReport({
     required DateTime dateFrom,
     required DateTime dateTo,
-    int? customerId,
     int? paidBy,
   }) async {
     final data = await _post(ApiEndpoints.billingReport, {
       "date_from": formatApiDate(dateFrom),
       "date_to": formatApiDate(dateTo),
-      if (customerId != null && customerId != 0) "customer_id": customerId,
       if (paidBy != null && paidBy != 0) "paid_by": paidBy,
       "type": "view",
     });
@@ -56,13 +54,11 @@ class ReportRepository {
   Future<CafeReportResult> getCafeReport({
     required DateTime dateFrom,
     required DateTime dateTo,
-    int? customerId,
     int? paidBy,
   }) async {
     final data = await _post(ApiEndpoints.cafeReport, {
       "date_from": formatApiDate(dateFrom),
       "date_to": formatApiDate(dateTo),
-      if (customerId != null && customerId != 0) "customer_id": customerId,
       if (paidBy != null && paidBy != 0) "paid_by": paidBy,
       "type": "view",
     });
@@ -75,30 +71,6 @@ class ReportRepository {
     }
 
     return CafeReportResult.fromJson(result);
-  }
-
-  Future<SaldoReportResult> getSaldoReport({
-    required DateTime dateFrom,
-    required DateTime dateTo,
-    int? customerId,
-    int? paidBy,
-  }) async {
-    final data = await _post(ApiEndpoints.saldoReport, {
-      "date_from": formatApiDate(dateFrom),
-      "date_to": formatApiDate(dateTo),
-      if (customerId != null && customerId != 0) "customer_id": customerId,
-      if (paidBy != null && paidBy != 0) "paid_by": paidBy,
-      "type": "view",
-    });
-
-    final result = data['result'];
-    if (result is! Map<String, dynamic>) {
-      throw const ReportRepositoryException(
-        "Format respons laporan saldo tidak valid.",
-      );
-    }
-
-    return SaldoReportResult.fromJson(result);
   }
 
   Future<List<StockReportRow>> getStockReport() async {
@@ -120,7 +92,6 @@ class ReportRepository {
   Future<ReportExportFile> exportBillingReport({
     required DateTime dateFrom,
     required DateTime dateTo,
-    int? customerId,
     int? paidBy,
     required String type,
   }) {
@@ -129,7 +100,6 @@ class ReportRepository {
       {
         "date_from": formatApiDate(dateFrom),
         "date_to": formatApiDate(dateTo),
-        if (customerId != null && customerId != 0) "customer_id": customerId,
         if (paidBy != null && paidBy != 0) "paid_by": paidBy,
         "type": type,
       },
@@ -141,7 +111,6 @@ class ReportRepository {
   Future<ReportExportFile> exportCafeReport({
     required DateTime dateFrom,
     required DateTime dateTo,
-    int? customerId,
     int? paidBy,
     required String type,
   }) {
@@ -150,32 +119,10 @@ class ReportRepository {
       {
         "date_from": formatApiDate(dateFrom),
         "date_to": formatApiDate(dateTo),
-        if (customerId != null && customerId != 0) "customer_id": customerId,
         if (paidBy != null && paidBy != 0) "paid_by": paidBy,
         "type": type,
       },
       defaultBasename: "laporan_cafe",
-      type: type,
-    );
-  }
-
-  Future<ReportExportFile> exportSaldoReport({
-    required DateTime dateFrom,
-    required DateTime dateTo,
-    int? customerId,
-    int? paidBy,
-    required String type,
-  }) {
-    return _download(
-      ApiEndpoints.saldoReport,
-      {
-        "date_from": formatApiDate(dateFrom),
-        "date_to": formatApiDate(dateTo),
-        if (customerId != null && customerId != 0) "customer_id": customerId,
-        if (paidBy != null && paidBy != 0) "paid_by": paidBy,
-        "type": type,
-      },
-      defaultBasename: "laporan_saldo",
       type: type,
     );
   }

@@ -83,16 +83,6 @@ class CashierSummaryPrinterService {
     );
     _byPayment(ticket, summary.cafe.byPayment);
 
-    ticket.feed(1);
-    ticket.text("Pengisian Saldo", style: const PrintTextStyle(bold: true));
-    _kv(ticket, "Jumlah Nota", "${summary.saldo.invoiceCount}");
-    _kv(
-      ticket,
-      "Total Transaksi",
-      formatThousands(summary.saldo.totalTransaction),
-    );
-    _byPayment(ticket, summary.saldo.byPayment);
-
     ticket.separator(char: '.');
     _kv(ticket, "Total Nota", "${summary.totalInvoiceCount}", bold: true);
     _kv(
