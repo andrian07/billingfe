@@ -3,6 +3,7 @@ import 'package:unified_esc_pos_printer/unified_esc_pos_printer.dart';
 import '../core/utils/formatters.dart';
 import '../models/cafe_receipt.dart';
 import '../models/receipt.dart';
+import 'printer_filter.dart';
 
 class ReceiptPrinterException implements Exception {
   final String message;
@@ -30,8 +31,8 @@ class ReceiptPrinterService {
     final manager = PrinterManager();
 
     try {
-      final printers = await manager.scanPrinters(
-        types: {PrinterConnectionType.usb},
+      final printers = excludeVirtualPrinters(
+        await manager.scanPrinters(types: {PrinterConnectionType.usb}),
       );
 
       if (printers.isEmpty) {

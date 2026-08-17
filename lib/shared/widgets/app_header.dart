@@ -9,7 +9,7 @@ import '../../features/cashier/widgets/tutup_kas_dialog.dart';
 import '../../services/session_storage.dart';
 import 'app_toast.dart';
 
-class AppHeader extends StatelessWidget {
+class AppHeader extends StatefulWidget {
   final String title;
   final String? subtitle;
   final bool showSearch;
@@ -20,6 +20,29 @@ class AppHeader extends StatelessWidget {
     this.subtitle,
     this.showSearch = true,
   });
+
+  @override
+  State<AppHeader> createState() => _AppHeaderState();
+}
+
+class _AppHeaderState extends State<AppHeader> {
+  String _username = "";
+  String _roleName = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSession();
+  }
+
+  Future<void> _loadSession() async {
+    final session = await SessionStorage().getSession();
+    if (!mounted) return;
+    setState(() {
+      _username = session?['username']?.toString() ?? "";
+      _roleName = session?['roleName']?.toString() ?? "";
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,14 +62,14 @@ class AppHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  title,
+                  widget.title,
                   style: AppText.heading,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (subtitle != null)
+                if (widget.subtitle != null)
                   Text(
-                    subtitle!,
+                    widget.subtitle!,
                     style: AppText.caption,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -55,7 +78,7 @@ class AppHeader extends StatelessWidget {
             ),
           ),
 
-          if (showSearch) ...[
+          if (widget.showSearch) ...[
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 280),
               child: TextField(
@@ -120,10 +143,11 @@ class AppHeader extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "Kasir 1",
+                    _username.isNotEmpty ? _username : "...",
                     style: AppText.body.copyWith(fontWeight: FontWeight.w600),
                   ),
-                  Text("Admin", style: AppText.caption),
+                  if (_roleName.isNotEmpty)
+                    Text(_roleName, style: AppText.caption),
                 ],
               ),
               const SizedBox(width: 2),

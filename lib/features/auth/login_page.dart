@@ -60,6 +60,7 @@ class _LoginPageState extends State<LoginPage> {
             ? username
             : _usernameController.text.trim(),
         "role": role,
+        "roleName": await _resolveRoleName(role),
       });
 
       await _loadAllowedMenuKeys(role);
@@ -71,6 +72,24 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => _errorMessage = e.message);
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Looks up the display name for [role] (roles are data-driven — see
+  /// [Role]) so the header can show the real role instead of a guess.
+  /// Superadmin (role id 1) isn't a row in the roles table, so it's labeled
+  /// directly; any lookup failure falls back to a generic label rather than
+  /// blocking login.
+  Future<String> _resolveRoleName(int? role) async {
+    if (role == null || role == 1) return "Admin";
+
+    try {
+      final roles = await RoleRepository().getRoles();
+      final match = roles.where((r) => r.id == role);
+      if (match.isEmpty || match.first.name.isEmpty) return "Pengguna";
+      return match.first.name;
+    } catch (_) {
+      return "Pengguna";
     }
   }
 
