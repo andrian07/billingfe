@@ -8,6 +8,8 @@ import 'app_menu_item.dart';
 class AppSidebar extends StatelessWidget {
   final String activeKey;
   final ValueChanged<String> onSelect;
+  final bool collapsed;
+  final VoidCallback onToggleCollapse;
 
   /// `menuKey`s the current user's role may view. Null means unrestricted
   /// (superadmin, or permission data hasn't loaded yet) and shows every
@@ -19,6 +21,8 @@ class AppSidebar extends StatelessWidget {
     super.key,
     required this.activeKey,
     required this.onSelect,
+    required this.collapsed,
+    required this.onToggleCollapse,
     this.allowedMenuKeys,
   });
 
@@ -149,43 +153,22 @@ class AppSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: AppSizes.sidebarWidth,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      width: collapsed
+          ? AppSizes.sidebarCollapsedWidth
+          : AppSizes.sidebarWidth,
       color: AppColors.sidebar,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: collapsed ? 12 : 20,
+        vertical: 20,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// Logo
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: Colors.black,
-                  shape: BoxShape.circle,
-                ),
-                child: const Text(
-                  "8",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  "Billing",
-                  style: AppText.title,
-                  maxLines: 2,
-                ),
-              ),
-            ],
-          ),
+          /// Logo + collapse toggle
+          _buildHeader(),
 
           const SizedBox(height: 28),
 
@@ -196,12 +179,15 @@ class AppSidebar extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   for (final section in _visibleSections) ...[
-                    _SectionHeader(title: section.title),
-                    const SizedBox(height: 6),
+                    if (!collapsed) ...[
+                      _SectionHeader(title: section.title),
+                      const SizedBox(height: 6),
+                    ],
                     for (final item in section.items) ...[
                       _MenuTile(
                         item: item,
                         active: activeKey == item.menuKey,
+                        collapsed: collapsed,
                         onTap: () => onSelect(item.menuKey),
                       ),
                       const SizedBox(height: 4),
@@ -220,11 +206,77 @@ class AppSidebar extends StatelessWidget {
           _MenuTile(
             item: _logoutItem,
             active: false,
+            collapsed: collapsed,
             color: AppColors.danger,
             onTap: () => onSelect(_logoutItem.menuKey),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildHeader() {
+    final logo = Container(
+      width: 34,
+      height: 34,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        shape: BoxShape.circle,
+      ),
+      child: const Text(
+        "8",
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
+      ),
+    );
+
+    final toggleButton = Tooltip(
+      message: collapsed ? "Perluas menu" : "Ciutkan menu",
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onToggleCollapse,
+        child: Container(
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            collapsed
+                ? Icons.chevron_right_rounded
+                : Icons.chevron_left_rounded,
+            size: 18,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+
+    if (collapsed) {
+      return Column(
+        children: [
+          logo,
+          const SizedBox(height: 12),
+          toggleButton,
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        logo,
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text("Billing", style: AppText.title, maxLines: 2),
+        ),
+        toggleButton,
+      ],
     );
   }
 }
@@ -252,12 +304,14 @@ class _SectionHeader extends StatelessWidget {
 class _MenuTile extends StatelessWidget {
   final AppMenuItem item;
   final bool active;
+  final bool collapsed;
   final VoidCallback onTap;
   final Color? color;
 
   const _MenuTile({
     required this.item,
     required this.active,
+    required this.collapsed,
     required this.onTap,
     this.color,
   });
@@ -266,24 +320,29 @@ class _MenuTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final fg = color ?? (active ? Colors.white : AppColors.textSecondary);
 
-    return InkWell(
+    final tile = InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Container(
         height: 46,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
+        padding: EdgeInsets.symmetric(horizontal: collapsed ? 0 : 14),
+        alignment: collapsed ? Alignment.center : null,
         decoration: BoxDecoration(
           color: active ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
-          children: [
-            Icon(item.icon, color: fg, size: AppSizes.iconSmall),
-            const SizedBox(width: 12),
-            Text(item.title, style: AppText.body.copyWith(color: fg)),
-          ],
-        ),
+        child: collapsed
+            ? Icon(item.icon, color: fg, size: AppSizes.iconSmall)
+            : Row(
+                children: [
+                  Icon(item.icon, color: fg, size: AppSizes.iconSmall),
+                  const SizedBox(width: 12),
+                  Text(item.title, style: AppText.body.copyWith(color: fg)),
+                ],
+              ),
       ),
     );
+
+    return collapsed ? Tooltip(message: item.title, child: tile) : tile;
   }
 }

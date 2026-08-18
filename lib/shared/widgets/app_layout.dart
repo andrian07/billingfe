@@ -32,6 +32,12 @@ class _AppLayoutState extends State<AppLayout> {
   // read, so this only actually awaits once per app run).
   Set<String>? _allowedMenuKeys;
 
+  // Static: every page route builds its own AppLayout instance (see
+  // app_router.dart), so instance state would reset the sidebar to
+  // expanded on every navigation. This keeps the collapsed/expanded
+  // choice consistent across pages for the rest of the app run.
+  static bool _sidebarCollapsed = false;
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +58,10 @@ class _AppLayoutState extends State<AppLayout> {
             activeKey: widget.activeMenuKey,
             onSelect: widget.onMenuSelect,
             allowedMenuKeys: _allowedMenuKeys,
+            collapsed: _sidebarCollapsed,
+            onToggleCollapse: () {
+              setState(() => _sidebarCollapsed = !_sidebarCollapsed);
+            },
           ),
 
           Expanded(

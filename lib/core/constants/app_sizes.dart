@@ -3,6 +3,7 @@ class AppSizes {
 
   // Layout
   static const double sidebarWidth = 260;
+  static const double sidebarCollapsedWidth = 76;
   static const double headerHeight = 70;
 
   // Padding
