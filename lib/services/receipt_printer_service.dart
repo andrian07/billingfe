@@ -7,6 +7,7 @@ import '../models/cafe_receipt.dart';
 import '../models/receipt.dart';
 import 'printer_filter.dart';
 import 'printer_preference_storage.dart';
+import 'ticket_layout.dart';
 
 class ReceiptPrinterException implements Exception {
   final String message;
@@ -80,87 +81,48 @@ class ReceiptPrinterService {
   Future<Ticket> _buildTicket(Receipt receipt) async {
     final ticket = await Ticket.create(PaperSize.mm80);
 
-    ticket.text(
-      receipt.businessName,
-      align: PrintAlign.center,
-      style: const PrintTextStyle(bold: true),
+    TicketLayout.header(
+      ticket,
+      businessName: receipt.businessName,
+      businessAddress: receipt.businessAddress,
+      invoiceNumber: receipt.invoiceNumber,
+      issuedAt: receipt.date,
     );
-    ticket.text(receipt.businessAddress, align: PrintAlign.center);
-    ticket.separator(char: '.');
-    ticket.text(
-      receipt.invoiceNumber,
-      align: PrintAlign.center,
-      style: const PrintTextStyle(bold: true),
-    );
-    ticket.feed(1);
 
-    // Bold is intentionally left off these row/column cells: the plugin
-    // reinforces mid-line bold with a bare-CR overstrike (issue #23) meant
-    // to overlap the same line on printers that ignore inline ESC E, but
-    // some clone firmware (incl. the Blueprint Eco80D used here) treats
-    // that CR as a newline instead — turning the "reinforcement" into a
-    // literal duplicate line. Only full-line ticket.text() calls are safe.
-    ticket.row([
-      PrintColumn(text: "Table", flex: 3),
-      PrintColumn(text: ": ${receipt.tableLabel}", flex: 5),
-    ]);
+    TicketLayout.row(ticket, "Meja", receipt.tableLabel);
+    TicketLayout.row(ticket, "Mulai", formatClock(receipt.startAt));
+    TicketLayout.row(ticket, "Selesai", formatClock(receipt.endAt));
+    TicketLayout.row(
+      ticket,
+      "Durasi",
+      formatDurationWords(receipt.totalDuration),
+    );
 
     if (receipt.periods.isNotEmpty) {
-      ticket.feed(1);
-      ticket.row([
-        for (final period in receipt.periods)
-          PrintColumn(text: period.label, align: PrintAlign.center),
-      ]);
-      ticket.separator(char: '.');
-      ticket.row([
-        for (final period in receipt.periods)
-          PrintColumn(text: "Lama: ${formatDuration(period.duration)}"),
-      ]);
-      ticket.row([
-        for (final period in receipt.periods)
-          PrintColumn(text: "Biaya: ${formatThousands(period.cost)}"),
-      ]);
+      TicketLayout.sectionTitle(ticket, "Rincian Waktu");
+      for (final period in receipt.periods) {
+        TicketLayout.row(ticket, period.label, formatCurrency(period.cost));
+        TicketLayout.row(ticket, "  Durasi", formatDuration(period.duration));
+      }
     }
 
-    ticket.feed(1);
-    ticket.row([
-      PrintColumn(text: "Tanggal", flex: 3),
-      PrintColumn(text: ": ${formatFullDate(receipt.date)}", flex: 5),
-    ]);
-    ticket.row([
-      PrintColumn(text: "Mulai", flex: 3),
-      PrintColumn(text: ": ${formatClock(receipt.startAt)}", flex: 5),
-    ]);
-    ticket.row([
-      PrintColumn(text: "Selesai", flex: 3),
-      PrintColumn(text: ": ${formatClock(receipt.endAt)}", flex: 5),
-    ]);
-    ticket.row([
-      PrintColumn(text: "Total Durasi", flex: 3),
-      PrintColumn(
-        text: ": ${formatDurationWords(receipt.totalDuration)}",
-        flex: 5,
-      ),
-    ]);
-
-    ticket.feed(1);
-    _amountRow(ticket, "Total Table", formatThousands(receipt.totalTable));
-    _amountRow(ticket, "Netto Table", formatThousands(receipt.nettoTable));
-    ticket.separator(char: '.');
-    _amountRow(ticket, "Subtotal", formatThousands(receipt.subtotal));
+    ticket.separator(char: '-', linesAfter: 1);
+    TicketLayout.row(ticket, "Subtotal", formatCurrency(receipt.subtotal));
     if (receipt.promoName != null) {
-      _amountRow(ticket, "Promo", receipt.promoName!);
+      TicketLayout.row(ticket, "Promo", receipt.promoName!);
     }
     if (receipt.discountAmount > 0) {
-      _amountRow(ticket, "Diskon", "-${formatThousands(receipt.discountAmount)}");
+      TicketLayout.row(
+        ticket,
+        "Diskon",
+        "-${formatCurrency(receipt.discountAmount)}",
+      );
     }
-    ticket.separator(char: '.');
-    _amountRow(ticket, "Grand Total", formatThousands(receipt.grandTotal));
 
-    ticket.feed(1);
-    ticket.text("Kasir : ${receipt.cashierName}");
-    ticket.feed(3);
-    ticket.cut();
+    TicketLayout.grandTotal(ticket, "GRAND TOTAL", receipt.grandTotal);
+
+    TicketLayout.row(ticket, "Bayar", receipt.paymentMethod);
+    TicketLayout.footer(ticket, receipt.cashierName);
 
     return ticket;
   }
@@ -168,77 +130,42 @@ class ReceiptPrinterService {
   Future<Ticket> _buildCafeTicket(CafeReceipt receipt) async {
     final ticket = await Ticket.create(PaperSize.mm80);
 
-    ticket.text(
-      receipt.businessName,
-      align: PrintAlign.center,
-      style: const PrintTextStyle(bold: true),
+    TicketLayout.header(
+      ticket,
+      businessName: receipt.businessName,
+      businessAddress: receipt.businessAddress,
+      invoiceNumber: receipt.invoiceNumber,
+      issuedAt: receipt.date,
     );
-    ticket.text(receipt.businessAddress, align: PrintAlign.center);
-    ticket.separator(char: '.');
-    ticket.text(
-      receipt.invoiceNumber,
-      align: PrintAlign.center,
-      style: const PrintTextStyle(bold: true),
-    );
-    ticket.feed(1);
 
-    ticket.row([
-      PrintColumn(text: "Tanggal", flex: 3),
-      PrintColumn(text: ": ${formatFullDate(receipt.date)}", flex: 5),
-    ]);
-    ticket.row([
-      PrintColumn(text: "Jam", flex: 3),
-      PrintColumn(text: ": ${formatClock(receipt.date)}", flex: 5),
-    ]);
     if (receipt.table != null) {
-      ticket.row([
-        PrintColumn(text: "Meja", flex: 3),
-        PrintColumn(text: ": ${receipt.table}", flex: 5),
-      ]);
+      TicketLayout.row(ticket, "Meja", receipt.table!);
     }
 
     ticket.feed(1);
-    ticket.separator(char: '.');
     for (final item in receipt.items) {
       ticket.text(item.name, style: const PrintTextStyle(bold: true));
       if (item.note != null) {
         ticket.text("  (${item.note})");
       }
-      ticket.row([
-        PrintColumn(
-          text: "${item.quantity} x ${formatThousands(item.price)}",
-          flex: 5,
-        ),
-        PrintColumn(
-          text: formatThousands(item.lineTotal),
-          flex: 3,
-          align: PrintAlign.right,
-        ),
-      ]);
+      TicketLayout.row(
+        ticket,
+        "  ${item.quantity} x ${formatCurrency(item.price)}",
+        formatCurrency(item.lineTotal),
+      );
     }
-    ticket.separator(char: '.');
 
-    ticket.feed(1);
-    _amountRow(ticket, "Subtotal", formatThousands(receipt.subtotal));
+    ticket.separator(char: '-', linesAfter: 1);
+    TicketLayout.row(ticket, "Subtotal", formatCurrency(receipt.subtotal));
     if (receipt.tax > 0) {
-      _amountRow(ticket, "Pajak", formatThousands(receipt.tax));
+      TicketLayout.row(ticket, "Pajak", formatCurrency(receipt.tax));
     }
-    ticket.separator(char: '.');
-    _amountRow(ticket, "Total", formatThousands(receipt.total));
 
-    ticket.feed(1);
-    ticket.text("Bayar : ${receipt.paymentMethod}");
-    ticket.text("Kasir : ${receipt.cashierName}");
-    ticket.feed(3);
-    ticket.cut();
+    TicketLayout.grandTotal(ticket, "TOTAL", receipt.total);
+
+    TicketLayout.row(ticket, "Bayar", receipt.paymentMethod);
+    TicketLayout.footer(ticket, receipt.cashierName);
 
     return ticket;
-  }
-
-  void _amountRow(Ticket ticket, String label, String value) {
-    ticket.row([
-      PrintColumn(text: label, flex: 3, align: PrintAlign.right),
-      PrintColumn(text: ": $value", flex: 3, align: PrintAlign.right),
-    ]);
   }
 }

@@ -31,12 +31,11 @@ class InvoiceRepository {
         startAt: start,
         endAt: now,
         totalDuration: duration.isNegative ? Duration.zero : duration,
-        totalTable: payment.subtotal,
-        nettoTable: payment.subtotal,
         subtotal: payment.subtotal,
         discountAmount: payment.discountAmount,
         promoName: payment.promo,
         grandTotal: payment.total,
+        paymentMethod: payment.paymentMethod,
         cashierName: cashierName,
       ),
     );

@@ -20,12 +20,11 @@ class Receipt {
   final DateTime startAt;
   final DateTime endAt;
   final Duration totalDuration;
-  final int totalTable;
-  final int nettoTable;
   final int subtotal;
   final int discountAmount;
   final String? promoName;
   final int grandTotal;
+  final String paymentMethod;
   final String cashierName;
 
   const Receipt({
@@ -38,12 +37,11 @@ class Receipt {
     required this.startAt,
     required this.endAt,
     required this.totalDuration,
-    required this.totalTable,
-    required this.nettoTable,
     required this.subtotal,
     required this.discountAmount,
     this.promoName,
     required this.grandTotal,
+    required this.paymentMethod,
     required this.cashierName,
   });
 }

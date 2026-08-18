@@ -6,6 +6,7 @@ import '../core/utils/formatters.dart';
 import '../models/cashier_summary.dart';
 import 'printer_filter.dart';
 import 'printer_preference_storage.dart';
+import 'ticket_layout.dart';
 
 class CashierSummaryPrinterException implements Exception {
   final String message;
@@ -83,37 +84,32 @@ class CashierSummaryPrinterService {
       style: const PrintTextStyle(bold: true),
     );
     ticket.text(formatFullDate(summary.businessDate), align: PrintAlign.center);
-    ticket.separator(char: '.');
-    ticket.feed(1);
+    ticket.separator(char: '=', linesAfter: 1);
 
-    ticket.row([
-      PrintColumn(text: "Kasir", flex: 3),
-      PrintColumn(text: ": $cashierName", flex: 5),
-    ]);
+    TicketLayout.row(ticket, "Kasir", cashierName);
 
-    ticket.feed(1);
-    ticket.text("Billing", style: const PrintTextStyle(bold: true));
-    _kv(ticket, "Jumlah Nota", "${summary.billing.invoiceCount}");
-    _kv(
+    TicketLayout.sectionTitle(ticket, "Billing");
+    TicketLayout.row(ticket, "Jumlah Nota", "${summary.billing.invoiceCount}");
+    TicketLayout.row(
       ticket,
       "Total Transaksi",
-      formatThousands(summary.billing.totalTransaction),
+      formatCurrency(summary.billing.totalTransaction),
     );
     _byPayment(ticket, summary.billing.byPayment);
 
-    ticket.feed(1);
-    ticket.text("Cafe / POS", style: const PrintTextStyle(bold: true));
-    _kv(ticket, "Jumlah Nota", "${summary.cafe.invoiceCount}");
-    _kv(
+    TicketLayout.sectionTitle(ticket, "Cafe / POS");
+    TicketLayout.row(ticket, "Jumlah Nota", "${summary.cafe.invoiceCount}");
+    TicketLayout.row(
       ticket,
       "Total Transaksi",
-      formatThousands(summary.cafe.totalTransaction),
+      formatCurrency(summary.cafe.totalTransaction),
     );
     _byPayment(ticket, summary.cafe.byPayment);
 
-    ticket.separator(char: '.');
-    _kv(ticket, "Total Nota", "${summary.totalInvoiceCount}");
-    _kv(ticket, "Grand Total", formatThousands(summary.totalTransaction));
+    ticket.separator(char: '-', linesAfter: 1);
+    TicketLayout.row(ticket, "Total Nota", "${summary.totalInvoiceCount}");
+
+    TicketLayout.grandTotal(ticket, "GRAND TOTAL", summary.totalTransaction);
 
     ticket.feed(3);
     ticket.cut();
@@ -123,21 +119,11 @@ class CashierSummaryPrinterService {
 
   void _byPayment(Ticket ticket, List<CashierPaymentBreakdown> byPayment) {
     for (final payment in byPayment) {
-      _kv(
+      TicketLayout.row(
         ticket,
         "  ${payment.paymentName}",
-        "${formatThousands(payment.totalTransaction)} (${payment.invoiceCount})",
+        "${formatCurrency(payment.totalTransaction)} (${payment.invoiceCount})",
       );
     }
-  }
-
-  // No bold here — see the note in ReceiptPrinterService._amountRow about
-  // the plugin's mid-line bold CR-overstrike printing as a duplicate line
-  // on this printer.
-  void _kv(Ticket ticket, String label, String value) {
-    ticket.row([
-      PrintColumn(text: label, flex: 3),
-      PrintColumn(text: ": $value", flex: 5, align: PrintAlign.right),
-    ]);
   }
 }
