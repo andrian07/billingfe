@@ -78,6 +78,11 @@ class _BillingPageState extends State<BillingPage> {
     super.dispose();
   }
 
+  void _refreshAll() {
+    _loadTables();
+    _loadCashierSummary();
+  }
+
   Future<void> _loadTables() async {
     setState(() {
       _loadingTables = true;
@@ -363,6 +368,7 @@ class _BillingPageState extends State<BillingPage> {
       showSearch: false,
       activeMenuKey: "meja",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: _refreshAll,
       child: _buildBody(),
     );
   }

@@ -164,6 +164,7 @@ class _CafeReportPageState extends State<CafeReportPage> {
       showSearch: false,
       activeMenuKey: "laporan_cafe",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: _loadFiltersAndReport,
       child: _buildCard(),
     );
   }

@@ -148,6 +148,7 @@ class _SettingsPageState extends State<SettingsPage> {
       showSearch: false,
       activeMenuKey: "pengaturan",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: _load,
       child: _buildCard(),
     );
   }

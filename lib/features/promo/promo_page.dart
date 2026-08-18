@@ -179,6 +179,7 @@ class _PromoPageState extends State<PromoPage> {
       showSearch: false,
       activeMenuKey: "promo",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: () => _load(_pagination.currentPage),
       child: _buildCard(),
     );
   }

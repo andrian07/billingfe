@@ -164,6 +164,7 @@ class _BillingReportPageState extends State<BillingReportPage> {
       showSearch: false,
       activeMenuKey: "laporan_billing",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: _loadFiltersAndReport,
       child: _buildCard(),
     );
   }

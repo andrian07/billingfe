@@ -102,6 +102,7 @@ class _StockReportPageState extends State<StockReportPage> {
       showSearch: false,
       activeMenuKey: "laporan_stok",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: _load,
       child: _buildCard(),
     );
   }

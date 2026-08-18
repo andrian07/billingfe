@@ -13,12 +13,14 @@ class AppHeader extends StatefulWidget {
   final String title;
   final String? subtitle;
   final bool showSearch;
+  final VoidCallback? onRefresh;
 
   const AppHeader({
     super.key,
     required this.title,
     this.subtitle,
     this.showSearch = true,
+    this.onRefresh,
   });
 
   @override
@@ -90,6 +92,15 @@ class _AppHeaderState extends State<AppHeader> {
               ),
             ),
             const SizedBox(width: 20),
+          ],
+
+          if (widget.onRefresh != null) ...[
+            IconButton(
+              tooltip: "Refresh",
+              onPressed: widget.onRefresh,
+              icon: const Icon(Icons.refresh_rounded),
+            ),
+            const SizedBox(width: 8),
           ],
 
           OutlinedButton.icon(

@@ -206,6 +206,7 @@ class _UserPageState extends State<UserPage> {
       showSearch: false,
       activeMenuKey: "pengguna",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: () => _load(_pagination.currentPage),
       child: _buildCard(),
     );
   }

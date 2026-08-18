@@ -406,6 +406,7 @@ class _PosPageState extends State<PosPage> {
       showSearch: false,
       activeMenuKey: "pos",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: _load,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

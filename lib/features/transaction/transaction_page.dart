@@ -34,6 +34,7 @@ class _TransactionPageState extends State<TransactionPage> {
   final _repository = TransactionRepository();
   final _receiptPrinter = ReceiptPrinterService();
   final _searchController = TextEditingController();
+  final _cafeListKey = GlobalKey<CafeTransactionListState>();
 
   _TransactionTab _tab = _TransactionTab.billing;
 
@@ -58,6 +59,13 @@ class _TransactionPageState extends State<TransactionPage> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// Reloads whichever tab's data — the billing list always, and the cafe
+  /// list too if it has already mounted (it manages its own state).
+  void _refreshAll() {
+    _load();
+    _cafeListKey.currentState?.refresh();
   }
 
   Future<void> _load() async {
@@ -248,6 +256,7 @@ class _TransactionPageState extends State<TransactionPage> {
       showSearch: false,
       activeMenuKey: "transaksi",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: _refreshAll,
       child: Column(
         children: [
           _buildTabBar(),
@@ -272,7 +281,7 @@ class _TransactionPageState extends State<TransactionPage> {
       case _TransactionTab.cafe:
         return AppCard(
           padding: EdgeInsets.zero,
-          child: const CafeTransactionList(),
+          child: CafeTransactionList(key: _cafeListKey),
         );
     }
   }

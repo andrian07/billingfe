@@ -99,6 +99,7 @@ class _TableSettingPageState extends State<TableSettingPage> {
       showSearch: false,
       activeMenuKey: "setting_table",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: _load,
       child: _buildCard(),
     );
   }

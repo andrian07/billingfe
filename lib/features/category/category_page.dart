@@ -150,6 +150,7 @@ class _CategoryPageState extends State<CategoryPage> {
       showSearch: false,
       activeMenuKey: "kategori",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: _load,
       child: _buildCard(),
     );
   }

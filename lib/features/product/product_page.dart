@@ -181,6 +181,7 @@ class _ProductPageState extends State<ProductPage> {
       showSearch: false,
       activeMenuKey: "produk",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: _load,
       child: _buildCard(),
     );
   }

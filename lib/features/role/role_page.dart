@@ -94,6 +94,7 @@ class _RolePageState extends State<RolePage> {
       showSearch: false,
       activeMenuKey: "role",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: _load,
       child: _buildCard(),
     );
   }

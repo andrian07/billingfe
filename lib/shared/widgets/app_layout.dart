@@ -11,6 +11,7 @@ class AppLayout extends StatefulWidget {
   final bool showSearch;
   final String activeMenuKey;
   final ValueChanged<String> onMenuSelect;
+  final VoidCallback? onRefresh;
 
   const AppLayout({
     super.key,
@@ -20,6 +21,7 @@ class AppLayout extends StatefulWidget {
     this.showSearch = true,
     required this.activeMenuKey,
     required this.onMenuSelect,
+    this.onRefresh,
   });
 
   @override
@@ -71,6 +73,7 @@ class _AppLayoutState extends State<AppLayout> {
                   title: widget.title,
                   subtitle: widget.subtitle,
                   showSearch: widget.showSearch,
+                  onRefresh: widget.onRefresh,
                 ),
 
                 Expanded(

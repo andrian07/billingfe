@@ -212,6 +212,7 @@ class _PurchaseAddPageState extends State<PurchaseAddPage> {
       showSearch: false,
       activeMenuKey: "pembelian",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: _loadProducts,
       child: AppCard(
         padding: EdgeInsets.zero,
         child: _loadingProducts

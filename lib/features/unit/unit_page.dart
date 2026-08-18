@@ -149,6 +149,7 @@ class _UnitPageState extends State<UnitPage> {
       showSearch: false,
       activeMenuKey: "unit",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: _load,
       child: _buildCard(),
     );
   }

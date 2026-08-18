@@ -16,10 +16,10 @@ class CafeTransactionList extends StatefulWidget {
   const CafeTransactionList({super.key});
 
   @override
-  State<CafeTransactionList> createState() => _CafeTransactionListState();
+  State<CafeTransactionList> createState() => CafeTransactionListState();
 }
 
-class _CafeTransactionListState extends State<CafeTransactionList> {
+class CafeTransactionListState extends State<CafeTransactionList> {
   static const _perPage = 20;
 
   final _repository = TransactionRepository();
@@ -39,6 +39,10 @@ class _CafeTransactionListState extends State<CafeTransactionList> {
     super.initState();
     _load(1);
   }
+
+  /// Reloads the currently displayed page — exposed for
+  /// [TransactionPage]'s header refresh button via a [GlobalKey].
+  Future<void> refresh() => _load(_currentPage);
 
   Future<void> _load(int page) async {
     setState(() {

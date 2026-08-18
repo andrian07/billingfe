@@ -170,6 +170,7 @@ class _PurchasePageState extends State<PurchasePage> {
       showSearch: false,
       activeMenuKey: "pembelian",
       onMenuSelect: (key) => navigateToMenu(context, key),
+      onRefresh: () => _load(_pagination.currentPage),
       child: _buildCard(),
     );
   }
