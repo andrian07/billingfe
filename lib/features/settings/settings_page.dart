@@ -11,6 +11,7 @@ import '../../shared/widgets/app_layout.dart';
 import '../../shared/widgets/app_toast.dart';
 import 'data/price_repository.dart';
 import 'widgets/price_edit_dialog.dart';
+import 'widgets/printer_select_dialog.dart';
 
 const _dayOrder = [
   "Sunday",
@@ -132,6 +133,13 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  void _openPrinterSelectDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => const PrinterSelectDialog(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppLayout(
@@ -178,24 +186,39 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
         const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Pengaturan Harga",
-              style: AppText.title.copyWith(fontWeight: FontWeight.w700),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Pengaturan Harga",
+                style: AppText.title.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                _loading
+                    ? "Memuat data..."
+                    : _error != null
+                    ? "Gagal memuat data"
+                    : "${_prices.length} slot jam • ${_dayOrder.length} hari",
+                style: AppText.caption,
+              ),
+            ],
+          ),
+        ),
+        OutlinedButton.icon(
+          onPressed: _openPrinterSelectDialog,
+          icon: const Icon(Icons.print_outlined, size: 18),
+          label: const Text("Pilih Printer"),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.textSecondary,
+            side: const BorderSide(color: AppColors.border),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
             ),
-            const SizedBox(height: 2),
-            Text(
-              _loading
-                  ? "Memuat data..."
-                  : _error != null
-                  ? "Gagal memuat data"
-                  : "${_prices.length} slot jam • ${_dayOrder.length} hari",
-              style: AppText.caption,
-            ),
-          ],
+          ),
         ),
       ],
     );

@@ -5,6 +5,7 @@ import 'package:unified_esc_pos_printer/unified_esc_pos_printer.dart';
 import '../core/utils/formatters.dart';
 import '../models/cashier_summary.dart';
 import 'printer_filter.dart';
+import 'printer_preference_storage.dart';
 
 class CashierSummaryPrinterException implements Exception {
   final String message;
@@ -53,8 +54,8 @@ class CashierSummaryPrinterService {
     CashierClosingSummary summary,
     String cashierName,
   ) async {
-    final printers = excludeVirtualPrinters(
-      await manager.scanPrinters(types: {PrinterConnectionType.usb}),
+    final printers = await manager.scanPrinters(
+      types: {PrinterConnectionType.usb},
     );
 
     if (printers.isEmpty) {
@@ -63,7 +64,9 @@ class CashierSummaryPrinterService {
       );
     }
 
-    await manager.connect(printers.first);
+    final preferredId = await PrinterPreferenceStorage()
+        .getSelectedPrinterIdentifier();
+    await manager.connect(pickPrinter(printers, preferredId));
     await manager.printTicket(await _buildTicket(summary, cashierName));
     await manager.disconnect();
   }

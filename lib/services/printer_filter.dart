@@ -22,3 +22,25 @@ List<PrinterDevice> excludeVirtualPrinters(List<PrinterDevice> printers) {
   }).toList();
   return real.isEmpty ? printers : real;
 }
+
+/// Picks which printer to connect to out of a raw (unfiltered) scan result.
+///
+/// Prefers the operator's saved choice — matched by [UsbPrinterDevice]
+/// identifier — since that's a deliberate pick that should win even over
+/// the virtual-printer filter. Falls back to the first non-virtual printer
+/// when there's no saved choice, or the saved one is no longer present
+/// (printer renamed/removed since it was picked).
+PrinterDevice pickPrinter(
+  List<PrinterDevice> printers,
+  String? preferredIdentifier,
+) {
+  if (preferredIdentifier != null) {
+    for (final printer in printers) {
+      if (printer is UsbPrinterDevice &&
+          printer.identifier == preferredIdentifier) {
+        return printer;
+      }
+    }
+  }
+  return excludeVirtualPrinters(printers).first;
+}

@@ -6,6 +6,7 @@ import '../core/utils/formatters.dart';
 import '../models/cafe_receipt.dart';
 import '../models/receipt.dart';
 import 'printer_filter.dart';
+import 'printer_preference_storage.dart';
 
 class ReceiptPrinterException implements Exception {
   final String message;
@@ -59,8 +60,8 @@ class ReceiptPrinterService {
     PrinterManager manager,
     Future<Ticket> Function() buildTicket,
   ) async {
-    final printers = excludeVirtualPrinters(
-      await manager.scanPrinters(types: {PrinterConnectionType.usb}),
+    final printers = await manager.scanPrinters(
+      types: {PrinterConnectionType.usb},
     );
 
     if (printers.isEmpty) {
@@ -69,7 +70,9 @@ class ReceiptPrinterService {
       );
     }
 
-    await manager.connect(printers.first);
+    final preferredId = await PrinterPreferenceStorage()
+        .getSelectedPrinterIdentifier();
+    await manager.connect(pickPrinter(printers, preferredId));
     await manager.printTicket(await buildTicket());
     await manager.disconnect();
   }
