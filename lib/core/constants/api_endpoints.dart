@@ -62,6 +62,7 @@ class ApiEndpoints {
   static const String payment = "$baseUrl/Billing/payment";
   static const String moveTable = "$baseUrl/Billing/move_table";
   static const String addDuration = "$baseUrl/Billing/add_duration";
+  static const String roundUpDuration = "$baseUrl/Billing/round_up_duration";
   static const String cancelTable = "$baseUrl/Billing/cancel_table";
   static const String transactionList = "$baseUrl/Billing/transaction_list";
   static const String transactionDetail = "$baseUrl/Billing/transaction_detail";

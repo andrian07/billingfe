@@ -20,6 +20,7 @@ import 'data/table_repository.dart';
 import 'widgets/add_duration_dialog.dart';
 import 'widgets/move_table_dialog.dart';
 import 'widgets/payment_dialog.dart';
+import 'widgets/round_up_duration_dialog.dart';
 import 'widgets/stat_card.dart';
 import 'widgets/start_session_dialog.dart';
 import 'widgets/table_card.dart';
@@ -310,6 +311,28 @@ class _BillingPageState extends State<BillingPage> {
     }
   }
 
+  void _openRoundUpDurationDialog(PoolTable table) async {
+    final target = await showDialog<Duration>(
+      context: context,
+      builder: (context) => RoundUpDurationDialog(table: table),
+    );
+
+    if (target == null) return;
+
+    try {
+      await _billingRepository.roundUpDuration(
+        tableId: table.id,
+        targetDuration: target,
+      );
+      if (!mounted) return;
+      AppToast.success(context, "Waktu ${table.name} berhasil digenapkan");
+      await _loadTables();
+    } on BillingRepositoryException catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e.message);
+    }
+  }
+
   void _cancelTransaction(PoolTable table) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -573,6 +596,9 @@ class _BillingPageState extends State<BillingPage> {
           onMoveTable: () => _openMoveTableDialog(table),
           onAddDuration: table.sessionType == SessionType.timer
               ? () => _openAddDurationDialog(table)
+              : null,
+          onRoundUpDuration: table.sessionType == SessionType.reguler
+              ? () => _openRoundUpDurationDialog(table)
               : null,
           onCancel: () => _cancelTransaction(table),
         );

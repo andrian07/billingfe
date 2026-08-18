@@ -96,6 +96,21 @@ class BillingRepository {
     });
   }
 
+  /// Converts a Reguler (open-ended, count-up) session into a Timer
+  /// counting down to [targetDuration] total from its start time — e.g.
+  /// already running 01:35:00, rounded up to a 02:00:00 target leaves
+  /// 00:25:00 remaining. The backend rejects a target that isn't strictly
+  /// greater than the elapsed time.
+  Future<void> roundUpDuration({
+    required String tableId,
+    required Duration targetDuration,
+  }) async {
+    await _post(ApiEndpoints.roundUpDuration, {
+      "table_id": int.tryParse(tableId) ?? tableId,
+      "target_duration": formatDuration(targetDuration),
+    });
+  }
+
   Future<void> cancelTable({
     required String tableId,
     required String createdBy,

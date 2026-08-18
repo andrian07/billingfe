@@ -53,6 +53,7 @@ class TableCard extends StatelessWidget {
   final VoidCallback? onPayment;
   final VoidCallback? onMoveTable;
   final VoidCallback? onAddDuration;
+  final VoidCallback? onRoundUpDuration;
   final VoidCallback? onCancel;
 
   const TableCard({
@@ -63,6 +64,7 @@ class TableCard extends StatelessWidget {
     this.onPayment,
     this.onMoveTable,
     this.onAddDuration,
+    this.onRoundUpDuration,
     this.onCancel,
   });
 
@@ -226,14 +228,22 @@ class TableCard extends StatelessWidget {
                   color: AppColors.info,
                   onTap: onMoveTable,
                 ),
-                _actionSlot(
-                  icon: Icons.more_time_rounded,
-                  tooltip: "Tambah Durasi",
-                  color: AppColors.primary,
-                  onTap: table.sessionType == SessionType.timer
-                      ? onAddDuration
-                      : null,
-                ),
+                if (table.sessionType == SessionType.reguler)
+                  _actionSlot(
+                    icon: Icons.schedule_rounded,
+                    tooltip: "Genapkan Waktu",
+                    color: AppColors.primary,
+                    onTap: onRoundUpDuration,
+                  )
+                else
+                  _actionSlot(
+                    icon: Icons.more_time_rounded,
+                    tooltip: "Tambah Durasi",
+                    color: AppColors.primary,
+                    onTap: table.sessionType == SessionType.timer
+                        ? onAddDuration
+                        : null,
+                  ),
                 _actionSlot(
                   icon: Icons.cancel_outlined,
                   tooltip: "Batalkan",
