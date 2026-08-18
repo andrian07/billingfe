@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_sizes.dart';
+import '../../core/constants/business_info.dart';
 import '../../core/navigation/app_navigation.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/utils/formatters.dart';
+import '../../models/pool_table.dart';
+import '../../models/receipt.dart';
 import '../../models/transaction.dart';
+import '../../services/receipt_printer_service.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_layout.dart';
+import '../../shared/widgets/app_toast.dart';
 import 'data/transaction_repository.dart';
 import 'widgets/cafe_transaction_list.dart';
 import 'widgets/transaction_detail_dialog.dart';
@@ -27,6 +32,7 @@ class _TransactionPageState extends State<TransactionPage> {
   static const _pageSize = 10;
 
   final _repository = TransactionRepository();
+  final _receiptPrinter = ReceiptPrinterService();
   final _searchController = TextEditingController();
 
   _TransactionTab _tab = _TransactionTab.billing;
@@ -40,6 +46,7 @@ class _TransactionPageState extends State<TransactionPage> {
   int _page = 0;
   _SortField _sortField = _SortField.date;
   bool _sortAscending = false;
+  int? _reprintingId;
 
   @override
   void initState() {
@@ -72,6 +79,53 @@ class _TransactionPageState extends State<TransactionPage> {
         _loadError = e.message;
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _reprintReceipt(Transaction transaction) async {
+    if (_reprintingId != null) return;
+
+    setState(() => _reprintingId = transaction.id);
+    try {
+      final detail = await _repository.getTransactionDetail(transaction.id);
+
+      final tableNumber = detail.tableName.replaceAll(RegExp(r'[^0-9]'), '');
+      final modeLabel = switch (detail.mode) {
+        SessionType.timer => "Timer",
+        SessionType.reguler => "Reguler",
+        null => "-",
+      };
+
+      await _receiptPrinter.printReceipt(
+        Receipt(
+          businessName: BusinessInfo.name,
+          businessAddress: BusinessInfo.address,
+          invoiceNumber: detail.invoiceNumber,
+          tableLabel: "$tableNumber - $modeLabel",
+          periods: const [],
+          date: detail.date,
+          startAt: detail.startAt,
+          endAt: detail.endAt,
+          totalDuration: detail.endAt.difference(detail.startAt),
+          subtotal: detail.subTotal,
+          discountAmount: detail.discount,
+          promoName: detail.promoName,
+          grandTotal: detail.totalBill,
+          paymentMethod: detail.paymentMethod,
+          cashierName: detail.createdBy,
+        ),
+      );
+
+      if (!mounted) return;
+      AppToast.success(context, "Struk ${transaction.invoiceNumber} berhasil dicetak ulang");
+    } on TransactionRepositoryException catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e.message);
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, "Gagal mencetak ulang: $e");
+    } finally {
+      if (mounted) setState(() => _reprintingId = null);
     }
   }
 
@@ -417,6 +471,8 @@ class _TransactionPageState extends State<TransactionPage> {
                       transaction: pageItems[index],
                       striped: index.isEven,
                       onTap: () => _openDetail(pageItems[index]),
+                      onReprint: () => _reprintReceipt(pageItems[index]),
+                      reprinting: _reprintingId == pageItems[index].id,
                     ),
                   ),
           ),
@@ -567,6 +623,8 @@ class _TransactionRow extends StatelessWidget {
   final VoidCallback? onSortDate;
   final VoidCallback? onSortTotal;
   final VoidCallback? onTap;
+  final VoidCallback? onReprint;
+  final bool reprinting;
 
   const _TransactionRow.header({
     required this.sortField,
@@ -577,13 +635,17 @@ class _TransactionRow extends StatelessWidget {
        no = null,
        transaction = null,
        striped = false,
-       onTap = null;
+       onTap = null,
+       onReprint = null,
+       reprinting = false;
 
   const _TransactionRow.data({
     required this.no,
     required this.transaction,
     required this.striped,
     this.onTap,
+    this.onReprint,
+    this.reprinting = false,
   }) : header = false,
        sortField = null,
        sortAscending = false,
@@ -615,6 +677,7 @@ class _TransactionRow extends StatelessWidget {
           onTap: onSortTotal,
         ),
         status: _headerText("Status", alignCenter: true),
+        aksi: _headerText("Aksi", alignCenter: true),
       );
     }
 
@@ -675,6 +738,15 @@ class _TransactionRow extends StatelessWidget {
               ),
             ),
           ),
+          aksi: isCompleted
+              ? Align(
+                  alignment: Alignment.center,
+                  child: _ReprintButton(
+                    reprinting: reprinting,
+                    onTap: onReprint,
+                  ),
+                )
+              : const SizedBox.shrink(),
         ),
       ),
     );
@@ -758,6 +830,7 @@ class _TransactionRow extends StatelessWidget {
     required Widget kasir,
     required Widget total,
     required Widget status,
+    required Widget aksi,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -781,7 +854,56 @@ class _TransactionRow extends StatelessWidget {
         Expanded(flex: 2, child: total),
         const SizedBox(width: 12),
         SizedBox(width: 90, child: status),
+        const SizedBox(width: 12),
+        SizedBox(width: 60, child: aksi),
       ],
+    );
+  }
+}
+
+class _ReprintButton extends StatelessWidget {
+  final bool reprinting;
+  final VoidCallback? onTap;
+
+  const _ReprintButton({required this.reprinting, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    if (reprinting) {
+      return const SizedBox(
+        width: 30,
+        height: 30,
+        child: Center(
+          child: SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    return Tooltip(
+      message: "Cetak ulang struk",
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: Container(
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: const Icon(
+            Icons.print_outlined,
+            size: 16,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ),
     );
   }
 }
