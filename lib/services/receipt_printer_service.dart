@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:unified_esc_pos_printer/unified_esc_pos_printer.dart';
 
 import '../core/utils/formatters.dart';
@@ -31,24 +33,43 @@ class ReceiptPrinterService {
     final manager = PrinterManager();
 
     try {
-      final printers = excludeVirtualPrinters(
-        await manager.scanPrinters(types: {PrinterConnectionType.usb}),
+      await _run(manager, buildTicket).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => throw const ReceiptPrinterException(
+          "Printer tidak merespon dalam 15 detik. Periksa kabel USB, "
+          "pastikan printer menyala, lalu coba lagi.",
+        ),
       );
-
-      if (printers.isEmpty) {
-        throw const ReceiptPrinterException(
-          "Printer USB tidak ditemukan. Pastikan printer terhubung dan menyala.",
-        );
-      }
-
-      await manager.connect(printers.first);
-      await manager.printTicket(await buildTicket());
-      await manager.disconnect();
     } on PrinterException catch (e) {
       throw ReceiptPrinterException(e.message);
     } finally {
-      await manager.dispose();
+      // Fire-and-forget with its own timeout: if the hang that triggered
+      // the timeout above is inside the plugin's native call, dispose()
+      // would queue behind it and never return either — that must not
+      // block this method from returning the error to the caller.
+      unawaited(
+        manager.dispose().timeout(const Duration(seconds: 3), onTimeout: () {}),
+      );
     }
+  }
+
+  Future<void> _run(
+    PrinterManager manager,
+    Future<Ticket> Function() buildTicket,
+  ) async {
+    final printers = excludeVirtualPrinters(
+      await manager.scanPrinters(types: {PrinterConnectionType.usb}),
+    );
+
+    if (printers.isEmpty) {
+      throw const ReceiptPrinterException(
+        "Printer USB tidak ditemukan. Pastikan printer terhubung dan menyala.",
+      );
+    }
+
+    await manager.connect(printers.first);
+    await manager.printTicket(await buildTicket());
+    await manager.disconnect();
   }
 
   Future<Ticket> _buildTicket(Receipt receipt) async {
