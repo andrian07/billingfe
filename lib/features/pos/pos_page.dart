@@ -189,6 +189,7 @@ class _PosPageState extends State<PosPage> {
   Future<void> _checkout() async {
     final items = _cartItems;
     final subtotal = _subtotal;
+    final keepTransactionId = _activeKeepTransactionId;
 
     final result = await showDialog<CafePaymentResult>(
       context: context,
@@ -207,6 +208,17 @@ class _PosPageState extends State<PosPage> {
       "Transaksi cafe berhasil (#${result.transactionCafeId})",
     );
     await _refreshProductStock();
+
+    // The sale itself already succeeded — if this cart came from a parked
+    // "Pesanan Tertunda" order, drop that held record too, otherwise it
+    // keeps showing up as still-pending even though it's been paid.
+    // Best-effort: a failure here doesn't affect the completed sale, it
+    // would just leave a stale entry staff can clear manually.
+    if (keepTransactionId != null) {
+      try {
+        await _cafeRepository.deleteKeepTransaction(keepTransactionId);
+      } catch (_) {}
+    }
 
     try {
       final session = await _sessionStorage.getSession();
