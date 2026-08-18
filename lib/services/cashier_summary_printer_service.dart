@@ -34,7 +34,9 @@ class CashierSummaryPrinterService {
         ),
       );
     } on PrinterException catch (e) {
-      throw CashierSummaryPrinterException(e.message);
+      throw CashierSummaryPrinterException(
+        e.cause != null ? "${e.message} — ${e.cause}" : e.message,
+      );
     } finally {
       // Fire-and-forget with its own timeout: if the hang that triggered
       // the timeout above is inside the plugin's native call, dispose()

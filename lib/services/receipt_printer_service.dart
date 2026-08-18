@@ -41,7 +41,9 @@ class ReceiptPrinterService {
         ),
       );
     } on PrinterException catch (e) {
-      throw ReceiptPrinterException(e.message);
+      throw ReceiptPrinterException(
+        e.cause != null ? "${e.message} — ${e.cause}" : e.message,
+      );
     } finally {
       // Fire-and-forget with its own timeout: if the hang that triggered
       // the timeout above is inside the plugin's native call, dispose()
