@@ -119,6 +119,17 @@ class BillingRepository {
     return data['result']?.toString() ?? "Reset lampu selesai";
   }
 
+  /// Signals the table's relay/lamp off when its Timer-mode countdown hits
+  /// zero — the session itself is left untouched (still "unpaid", waiting
+  /// for staff to process payment/cancel as usual), this only turns the
+  /// physical light off. Best-effort: callers should not surface failures
+  /// to the user, since a missed signal is recoverable via "Reset Lampu".
+  Future<void> notifyTimerExpired({required String tableId}) async {
+    await _post(ApiEndpoints.timerExpired, {
+      "table_id": int.tryParse(tableId) ?? tableId,
+    });
+  }
+
   Future<void> moveTable({
     required String fromTableId,
     required String toTableId,

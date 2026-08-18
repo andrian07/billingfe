@@ -69,6 +69,7 @@ class ApiEndpoints {
   static const String updateSettingTable =
       "$baseUrl/Billing/update_setting_table";
   static const String resetLampu = "$baseUrl/Billing/reset_lampu";
+  static const String timerExpired = "$baseUrl/Billing/timer_expired";
 
   // Cafe
   static const String saveTransactionCafe =

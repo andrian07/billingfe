@@ -151,6 +151,15 @@ class _BillingPageState extends State<BillingPage> {
       final remaining = table.endAt!.difference(now);
 
       if (remaining <= Duration.zero) {
+        // Fire-and-forget: only turns the physical light off, the session
+        // stays "unpaid" for staff to process as usual. This only runs
+        // once per table — the next tick already sees table.status as
+        // unpaid and skips it (see _tick's playing-only filter).
+        unawaited(
+          _billingRepository
+              .notifyTimerExpired(tableId: table.id)
+              .catchError((_) {}),
+        );
         return table.copyWith(
           status: TableStatus.unpaid,
           timerText: formatDuration(Duration.zero),
