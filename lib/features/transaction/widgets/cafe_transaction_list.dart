@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_sizes.dart';
+import '../../../core/constants/business_info.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../models/cafe_receipt.dart';
 import '../../../models/cafe_transaction.dart';
 import '../../../models/transaction.dart';
+import '../../../services/receipt_printer_service.dart';
+import '../../../shared/widgets/app_toast.dart';
 import '../data/transaction_repository.dart';
 
 class CafeTransactionList extends StatefulWidget {
@@ -18,6 +23,7 @@ class _CafeTransactionListState extends State<CafeTransactionList> {
   static const _perPage = 20;
 
   final _repository = TransactionRepository();
+  final _receiptPrinter = ReceiptPrinterService();
 
   List<CafeTransaction> _transactions = [];
   int _currentPage = 1;
@@ -25,6 +31,8 @@ class _CafeTransactionListState extends State<CafeTransactionList> {
   int _totalItems = 0;
   bool _loading = true;
   String? _error;
+  int? _reprintingId;
+  int? _cancelingId;
 
   @override
   void initState() {
@@ -57,6 +65,108 @@ class _CafeTransactionListState extends State<CafeTransactionList> {
         _error = e.message;
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _reprintReceipt(CafeTransaction transaction) async {
+    if (_reprintingId != null) return;
+
+    setState(() => _reprintingId = transaction.id);
+    try {
+      final detail = await _repository.getCafeTransactionDetail(
+        transaction.id,
+      );
+
+      await _receiptPrinter.printCafeReceipt(
+        CafeReceipt(
+          businessName: BusinessInfo.name,
+          businessAddress: BusinessInfo.address,
+          invoiceNumber: detail.invoiceNumber,
+          date: detail.date,
+          table: detail.table != null ? "Meja ${detail.table}" : "Takeaway",
+          items: [
+            for (final item in detail.items)
+              CafeReceiptItem(
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                note: item.note,
+              ),
+          ],
+          subtotal: detail.subTotal,
+          tax: detail.tax,
+          total: detail.totalBill,
+          paymentMethod: detail.paymentMethod,
+          cashierName: detail.createdBy,
+          isReprint: true,
+        ),
+      );
+
+      if (!mounted) return;
+      AppToast.success(
+        context,
+        "Struk ${transaction.invoiceNumber} berhasil dicetak ulang",
+      );
+    } on TransactionRepositoryException catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e.message);
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, "Gagal mencetak ulang: $e");
+    } finally {
+      if (mounted) setState(() => _reprintingId = null);
+    }
+  }
+
+  Future<void> _cancelTransaction(CafeTransaction transaction) async {
+    if (_cancelingId != null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+        ),
+        title: Text("Batalkan Transaksi?", style: AppText.title),
+        content: Text(
+          "Transaksi ${transaction.invoiceNumber} akan ditandai dibatalkan "
+          "dan tidak lagi dihitung ke total transaksi.",
+          style: AppText.bodySecondary,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text("TIDAK"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text("YA, BATALKAN"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _cancelingId = transaction.id);
+    try {
+      await _repository.cancelCafeTransaction(transaction.id);
+      if (!mounted) return;
+      AppToast.success(
+        context,
+        "Transaksi ${transaction.invoiceNumber} dibatalkan",
+      );
+      await _load(_currentPage);
+    } on TransactionRepositoryException catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e.message);
+    } finally {
+      if (mounted) setState(() => _cancelingId = null);
     }
   }
 
@@ -204,6 +314,7 @@ class _CafeTransactionListState extends State<CafeTransactionList> {
       total: _headerText("Total", alignEnd: true),
       kasir: _headerText("Kasir"),
       status: _headerText("Status", alignCenter: true),
+      aksi: _headerText("Aksi", alignCenter: true),
     );
   }
 
@@ -255,6 +366,27 @@ class _CafeTransactionListState extends State<CafeTransactionList> {
             ),
           ),
         ),
+        aksi: isCompleted
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _ActionButton(
+                    icon: Icons.print_outlined,
+                    tooltip: "Cetak ulang struk",
+                    loading: _reprintingId == transaction.id,
+                    onTap: () => _reprintReceipt(transaction),
+                  ),
+                  const SizedBox(width: 6),
+                  _ActionButton(
+                    icon: Icons.cancel_outlined,
+                    tooltip: "Batalkan transaksi",
+                    loading: _cancelingId == transaction.id,
+                    color: AppColors.danger,
+                    onTap: () => _cancelTransaction(transaction),
+                  ),
+                ],
+              )
+            : const SizedBox.shrink(),
       ),
     );
   }
@@ -281,6 +413,7 @@ class _CafeTransactionListState extends State<CafeTransactionList> {
     required Widget total,
     required Widget kasir,
     required Widget status,
+    required Widget aksi,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -298,7 +431,61 @@ class _CafeTransactionListState extends State<CafeTransactionList> {
         Expanded(flex: 2, child: kasir),
         const SizedBox(width: 12),
         SizedBox(width: 90, child: status),
+        const SizedBox(width: 12),
+        SizedBox(width: 76, child: aksi),
       ],
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final bool loading;
+  final Color? color;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.icon,
+    required this.tooltip,
+    required this.loading,
+    required this.onTap,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const SizedBox(
+        width: 30,
+        height: 30,
+        child: Center(
+          child: SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: Container(
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Icon(icon, size: 15, color: color ?? AppColors.textSecondary),
+        ),
+      ),
     );
   }
 }

@@ -113,6 +113,7 @@ class _TransactionPageState extends State<TransactionPage> {
           grandTotal: detail.totalBill,
           paymentMethod: detail.paymentMethod,
           cashierName: detail.createdBy,
+          isReprint: true,
         ),
       );
 

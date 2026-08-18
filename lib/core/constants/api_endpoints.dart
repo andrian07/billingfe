@@ -81,6 +81,9 @@ class ApiEndpoints {
       "$baseUrl/Cafe/delete_keep_transaction";
   static const String transactionCafeList =
       "$baseUrl/Cafe/transaction_cafe_list";
+  static const String transactionCafeDetail = "$baseUrl/Cafe/transaction_detail";
+  static const String cancelTransactionCafe =
+      "$baseUrl/Cafe/cancel_transaction_cafe";
 
   // Setting
   static const String categoryMejaList = "$baseUrl/Setting/category_meja";

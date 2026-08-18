@@ -87,6 +87,7 @@ class ReceiptPrinterService {
       businessAddress: receipt.businessAddress,
       invoiceNumber: receipt.invoiceNumber,
       issuedAt: receipt.date,
+      isReprint: receipt.isReprint,
     );
 
     TicketLayout.row(ticket, "Meja", receipt.tableLabel);
@@ -136,6 +137,7 @@ class ReceiptPrinterService {
       businessAddress: receipt.businessAddress,
       invoiceNumber: receipt.invoiceNumber,
       issuedAt: receipt.date,
+      isReprint: receipt.isReprint,
     );
 
     if (receipt.table != null) {

@@ -26,6 +26,7 @@ class CafeReceipt {
   final int total;
   final String paymentMethod;
   final String cashierName;
+  final bool isReprint;
 
   const CafeReceipt({
     required this.businessName,
@@ -39,5 +40,6 @@ class CafeReceipt {
     required this.total,
     required this.paymentMethod,
     required this.cashierName,
+    this.isReprint = false,
   });
 }

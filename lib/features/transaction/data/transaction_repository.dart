@@ -147,6 +147,29 @@ class TransactionRepository {
     );
   }
 
+  Future<CafeTransactionDetail> getCafeTransactionDetail(
+    int transactionCafeId,
+  ) async {
+    final data = await _post(ApiEndpoints.transactionCafeDetail, {
+      "transaction_cafe_id": transactionCafeId,
+    });
+
+    final result = data['result'];
+    if (result is! Map<String, dynamic>) {
+      throw const TransactionRepositoryException(
+        "Format detail transaksi cafe tidak valid.",
+      );
+    }
+
+    return CafeTransactionDetail.fromJson(result);
+  }
+
+  Future<void> cancelCafeTransaction(int transactionCafeId) async {
+    await _post(ApiEndpoints.cancelTransactionCafe, {
+      "transaction_cafe_id": transactionCafeId,
+    });
+  }
+
   Future<Map<int, String>> _fetchPromoNames() async {
     try {
       final promos = await _promoRepository.getAllPromos();

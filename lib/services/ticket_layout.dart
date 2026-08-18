@@ -22,6 +22,7 @@ class TicketLayout {
     required String businessAddress,
     required String invoiceNumber,
     required DateTime issuedAt,
+    bool isReprint = false,
   }) {
     ticket.text(
       businessName,
@@ -39,6 +40,13 @@ class TicketLayout {
       "${formatFullDate(issuedAt)}  ${formatClock(issuedAt)}",
       align: PrintAlign.center,
     );
+    if (isReprint) {
+      ticket.text(
+        "*** PRINT ULANG ***",
+        align: PrintAlign.center,
+        style: const PrintTextStyle(bold: true),
+      );
+    }
     ticket.separator(char: '=', linesAfter: 1);
   }
 

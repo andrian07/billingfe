@@ -26,6 +26,7 @@ class Receipt {
   final int grandTotal;
   final String paymentMethod;
   final String cashierName;
+  final bool isReprint;
 
   const Receipt({
     required this.businessName,
@@ -43,5 +44,6 @@ class Receipt {
     required this.grandTotal,
     required this.paymentMethod,
     required this.cashierName,
+    this.isReprint = false,
   });
 }
