@@ -67,6 +67,23 @@ class CashierTransactionSummary {
   }
 }
 
+/// One cafe product's total quantity sold, for the "Cetak Cafe" item
+/// breakdown printed from Tutup Kas.
+class CafeItemSold {
+  final String productName;
+  final int quantity;
+
+  const CafeItemSold({required this.productName, required this.quantity});
+
+  factory CafeItemSold.fromJson(Map<String, dynamic> json) {
+    final qty = json['qty'];
+    return CafeItemSold(
+      productName: json['product_name']?.toString() ?? "",
+      quantity: qty is int ? qty : int.tryParse(qty?.toString() ?? "") ?? 0,
+    );
+  }
+}
+
 /// Today's transaction summary for a logged-in cashier, combining billing
 /// (pool table) and cafe/POS sales — read via
 /// Report/get_transaction_today_by_cashier for the "Tutup Kas" flow.
@@ -75,12 +92,14 @@ class CashierClosingSummary {
   final int userId;
   final CashierTransactionSummary billing;
   final CashierTransactionSummary cafe;
+  final List<CafeItemSold> cafeItems;
 
   const CashierClosingSummary({
     required this.businessDate,
     required this.userId,
     required this.billing,
     required this.cafe,
+    this.cafeItems = const [],
   });
 
   int get totalTransaction => billing.totalTransaction + cafe.totalTransaction;
@@ -95,6 +114,7 @@ class CashierClosingSummary {
 
     final billingJson = json['billing'];
     final cafeJson = json['cafe'];
+    final cafeItemsJson = json['cafe_items'];
 
     return CashierClosingSummary(
       businessDate:
@@ -107,6 +127,12 @@ class CashierClosingSummary {
       cafe: cafeJson is Map<String, dynamic>
           ? CashierTransactionSummary.fromJson(cafeJson)
           : CashierTransactionSummary.empty,
+      cafeItems: cafeItemsJson is List
+          ? cafeItemsJson
+                .whereType<Map<String, dynamic>>()
+                .map(CafeItemSold.fromJson)
+                .toList()
+          : const [],
     );
   }
 }

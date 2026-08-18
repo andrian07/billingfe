@@ -34,6 +34,7 @@ class _TutupKasDialogState extends State<TutupKasDialog> {
   String? _error;
   CashierClosingSummary? _summary;
   bool _printing = false;
+  bool _printingCafeItems = false;
 
   @override
   void initState() {
@@ -81,6 +82,27 @@ class _TutupKasDialogState extends State<TutupKasDialog> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _printing = false);
+      AppToast.error(context, "$e");
+    }
+  }
+
+  Future<void> _printCafeItems() async {
+    final summary = _summary;
+    if (summary == null || _printingCafeItems) return;
+
+    setState(() => _printingCafeItems = true);
+
+    try {
+      await _printerService.printCafeItems(
+        summary,
+        cashierName: widget.cashierName,
+      );
+      if (!mounted) return;
+      setState(() => _printingCafeItems = false);
+      AppToast.success(context, "Struk item cafe berhasil dicetak");
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _printingCafeItems = false);
       AppToast.error(context, "$e");
     }
   }
@@ -404,6 +426,30 @@ class _TutupKasDialogState extends State<TutupKasDialog> {
               ),
             ),
             child: const Text("TUTUP"),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 2,
+          child: OutlinedButton.icon(
+            onPressed: canPrint && !_printingCafeItems ? _printCafeItems : null,
+            icon: _printingCafeItems
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.local_cafe_outlined, size: 20),
+            label: Text(_printingCafeItems ? "MENCETAK..." : "CETAK CAFE"),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.text,
+              side: const BorderSide(color: AppColors.border),
+              minimumSize: const Size(0, 48),
+              textStyle: AppText.button,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+              ),
+            ),
           ),
         ),
         const SizedBox(width: 12),

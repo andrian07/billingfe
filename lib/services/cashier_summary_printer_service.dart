@@ -17,18 +17,31 @@ class CashierSummaryPrinterException implements Exception {
   String toString() => message;
 }
 
-/// Prints the "Tutup Kas" (close register) ticket for a cashier's
-/// today-so-far summary, via the same USB ESC/POS flow as
+/// Prints tickets for the "Tutup Kas" (close register) flow — the summary
+/// ticket and the cafe items-sold ticket — via the same USB ESC/POS flow as
 /// [ReceiptPrinterService].
 class CashierSummaryPrinterService {
   Future<void> printSummary(
     CashierClosingSummary summary, {
     required String cashierName,
-  }) async {
+  }) {
+    return _print(() => _buildSummaryTicket(summary, cashierName));
+  }
+
+  Future<void> printCafeItems(
+    CashierClosingSummary summary, {
+    required String cashierName,
+  }) {
+    return _print(() => _buildCafeItemsTicket(summary, cashierName));
+  }
+
+  /// Shared USB scan/connect/print/disconnect flow — [buildTicket] builds
+  /// whichever ticket layout the caller needs.
+  Future<void> _print(Future<Ticket> Function() buildTicket) async {
     final manager = PrinterManager();
 
     try {
-      await _run(manager, summary, cashierName).timeout(
+      await _run(manager, buildTicket).timeout(
         const Duration(seconds: 15),
         onTimeout: () => throw const CashierSummaryPrinterException(
           "Printer tidak merespon dalam 15 detik. Periksa kabel USB, "
@@ -52,8 +65,7 @@ class CashierSummaryPrinterService {
 
   Future<void> _run(
     PrinterManager manager,
-    CashierClosingSummary summary,
-    String cashierName,
+    Future<Ticket> Function() buildTicket,
   ) async {
     final printers = await manager.scanPrinters(
       types: {PrinterConnectionType.usb},
@@ -68,11 +80,11 @@ class CashierSummaryPrinterService {
     final preferredId = await PrinterPreferenceStorage()
         .getSelectedPrinterIdentifier();
     await manager.connect(pickPrinter(printers, preferredId));
-    await manager.printTicket(await _buildTicket(summary, cashierName));
+    await manager.printTicket(await buildTicket());
     await manager.disconnect();
   }
 
-  Future<Ticket> _buildTicket(
+  Future<Ticket> _buildSummaryTicket(
     CashierClosingSummary summary,
     String cashierName,
   ) async {
@@ -110,6 +122,41 @@ class CashierSummaryPrinterService {
     TicketLayout.row(ticket, "Total Nota", "${summary.totalInvoiceCount}");
 
     TicketLayout.grandTotal(ticket, "GRAND TOTAL", summary.totalTransaction);
+
+    ticket.feed(3);
+    ticket.cut();
+
+    return ticket;
+  }
+
+  Future<Ticket> _buildCafeItemsTicket(
+    CashierClosingSummary summary,
+    String cashierName,
+  ) async {
+    final ticket = await Ticket.create(PaperSize.mm80);
+
+    ticket.text(
+      "ITEM CAFE TERJUAL",
+      align: PrintAlign.center,
+      style: const PrintTextStyle(bold: true),
+    );
+    ticket.text(formatFullDate(summary.businessDate), align: PrintAlign.center);
+    ticket.separator(char: '=', linesAfter: 1);
+
+    TicketLayout.row(ticket, "Kasir", cashierName);
+    ticket.separator(char: '-', linesAfter: 1);
+
+    if (summary.cafeItems.isEmpty) {
+      ticket.text("Tidak ada penjualan cafe hari ini", align: PrintAlign.center);
+    } else {
+      var totalQty = 0;
+      for (final item in summary.cafeItems) {
+        TicketLayout.row(ticket, item.productName, "${item.quantity}");
+        totalQty += item.quantity;
+      }
+      ticket.separator(char: '-', linesAfter: 1);
+      TicketLayout.row(ticket, "Total Item", "$totalQty");
+    }
 
     ticket.feed(3);
     ticket.cut();
