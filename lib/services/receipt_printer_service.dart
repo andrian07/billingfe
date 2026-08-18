@@ -94,28 +94,22 @@ class ReceiptPrinterService {
     );
     ticket.feed(1);
 
+    // Bold is intentionally left off these row/column cells: the plugin
+    // reinforces mid-line bold with a bare-CR overstrike (issue #23) meant
+    // to overlap the same line on printers that ignore inline ESC E, but
+    // some clone firmware (incl. the Blueprint Eco80D used here) treats
+    // that CR as a newline instead — turning the "reinforcement" into a
+    // literal duplicate line. Only full-line ticket.text() calls are safe.
     ticket.row([
-      PrintColumn(
-        text: "Table",
-        flex: 3,
-        style: const PrintTextStyle(bold: true),
-      ),
-      PrintColumn(
-        text: ": ${receipt.tableLabel}",
-        flex: 5,
-        style: const PrintTextStyle(bold: true),
-      ),
+      PrintColumn(text: "Table", flex: 3),
+      PrintColumn(text: ": ${receipt.tableLabel}", flex: 5),
     ]);
 
     if (receipt.periods.isNotEmpty) {
       ticket.feed(1);
       ticket.row([
         for (final period in receipt.periods)
-          PrintColumn(
-            text: period.label,
-            align: PrintAlign.center,
-            style: const PrintTextStyle(bold: true),
-          ),
+          PrintColumn(text: period.label, align: PrintAlign.center),
       ]);
       ticket.separator(char: '.');
       ticket.row([
@@ -154,14 +148,14 @@ class ReceiptPrinterService {
     _amountRow(ticket, "Netto Table", formatThousands(receipt.nettoTable));
     ticket.separator(char: '.');
     _amountRow(ticket, "Subtotal", formatThousands(receipt.subtotal));
-    _amountRow(ticket, "Diskon", "${receipt.discountPercent}%");
+    if (receipt.promoName != null) {
+      _amountRow(ticket, "Promo", receipt.promoName!);
+    }
+    if (receipt.discountAmount > 0) {
+      _amountRow(ticket, "Diskon", "-${formatThousands(receipt.discountAmount)}");
+    }
     ticket.separator(char: '.');
-    _amountRow(
-      ticket,
-      "Grand Total",
-      formatThousands(receipt.grandTotal),
-      bold: true,
-    );
+    _amountRow(ticket, "Grand Total", formatThousands(receipt.grandTotal));
 
     ticket.feed(1);
     ticket.text("Kasir : ${receipt.cashierName}");
@@ -230,7 +224,7 @@ class ReceiptPrinterService {
       _amountRow(ticket, "Pajak", formatThousands(receipt.tax));
     }
     ticket.separator(char: '.');
-    _amountRow(ticket, "Total", formatThousands(receipt.total), bold: true);
+    _amountRow(ticket, "Total", formatThousands(receipt.total));
 
     ticket.feed(1);
     ticket.text("Bayar : ${receipt.paymentMethod}");
@@ -241,25 +235,10 @@ class ReceiptPrinterService {
     return ticket;
   }
 
-  void _amountRow(
-    Ticket ticket,
-    String label,
-    String value, {
-    bool bold = false,
-  }) {
+  void _amountRow(Ticket ticket, String label, String value) {
     ticket.row([
-      PrintColumn(
-        text: label,
-        flex: 3,
-        align: PrintAlign.right,
-        style: PrintTextStyle(bold: bold),
-      ),
-      PrintColumn(
-        text: ": $value",
-        flex: 3,
-        align: PrintAlign.right,
-        style: PrintTextStyle(bold: bold),
-      ),
+      PrintColumn(text: label, flex: 3, align: PrintAlign.right),
+      PrintColumn(text: ": $value", flex: 3, align: PrintAlign.right),
     ]);
   }
 }

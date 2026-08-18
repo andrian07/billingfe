@@ -15,11 +15,15 @@ import '../data/billing_repository.dart';
 class PaymentResult {
   final String paymentMethod;
   final String? promo;
+  final int subtotal;
+  final int discountAmount;
   final int total;
 
   const PaymentResult({
     required this.paymentMethod,
     this.promo,
+    required this.subtotal,
+    required this.discountAmount,
     required this.total,
   });
 }
@@ -243,6 +247,8 @@ class _PaymentDialogState extends State<PaymentDialog> {
         PaymentResult(
           paymentMethod: paymentMethod.name,
           promo: _selectedPromo?.name,
+          subtotal: calculation.totalBilling,
+          discountAmount: calculation.totalPromo,
           total: calculation.totalTransaksi,
         ),
       );

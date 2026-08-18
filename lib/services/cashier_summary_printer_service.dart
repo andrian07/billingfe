@@ -112,13 +112,8 @@ class CashierSummaryPrinterService {
     _byPayment(ticket, summary.cafe.byPayment);
 
     ticket.separator(char: '.');
-    _kv(ticket, "Total Nota", "${summary.totalInvoiceCount}", bold: true);
-    _kv(
-      ticket,
-      "Grand Total",
-      formatThousands(summary.totalTransaction),
-      bold: true,
-    );
+    _kv(ticket, "Total Nota", "${summary.totalInvoiceCount}");
+    _kv(ticket, "Grand Total", formatThousands(summary.totalTransaction));
 
     ticket.feed(3);
     ticket.cut();
@@ -136,19 +131,13 @@ class CashierSummaryPrinterService {
     }
   }
 
-  void _kv(Ticket ticket, String label, String value, {bool bold = false}) {
+  // No bold here — see the note in ReceiptPrinterService._amountRow about
+  // the plugin's mid-line bold CR-overstrike printing as a duplicate line
+  // on this printer.
+  void _kv(Ticket ticket, String label, String value) {
     ticket.row([
-      PrintColumn(
-        text: label,
-        flex: 3,
-        style: PrintTextStyle(bold: bold),
-      ),
-      PrintColumn(
-        text: ": $value",
-        flex: 5,
-        align: PrintAlign.right,
-        style: PrintTextStyle(bold: bold),
-      ),
+      PrintColumn(text: label, flex: 3),
+      PrintColumn(text: ": $value", flex: 5, align: PrintAlign.right),
     ]);
   }
 }

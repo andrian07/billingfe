@@ -3,14 +3,17 @@ import '../../../models/pool_table.dart';
 import '../../../models/receipt.dart';
 import '../widgets/payment_dialog.dart';
 
-/// Builds invoice data for the receipt printer.
-///
-/// Amounts are not computed here — there is no pricing engine in this app
-/// yet, so totals are placeholders until this reads from the billing API.
+/// Builds invoice data for the receipt printer, from the table and the
+/// payment result — [PaymentResult] already carries the real subtotal,
+/// promo discount, and total computed by [PaymentDialog]'s pricing logic.
 class InvoiceRepository {
   int _localSequence = 0;
 
-  Future<Receipt> generateInvoice(PoolTable table, PaymentResult payment) {
+  Future<Receipt> generateInvoice(
+    PoolTable table,
+    PaymentResult payment, {
+    required String cashierName,
+  }) {
     final now = DateTime.now();
     final start = table.startAt ?? now;
     final duration = now.difference(start);
@@ -28,12 +31,13 @@ class InvoiceRepository {
         startAt: start,
         endAt: now,
         totalDuration: duration.isNegative ? Duration.zero : duration,
-        totalTable: 0,
-        nettoTable: 0,
-        subtotal: 0,
-        discountPercent: 0,
-        grandTotal: 0,
-        cashierName: "owner",
+        totalTable: payment.subtotal,
+        nettoTable: payment.subtotal,
+        subtotal: payment.subtotal,
+        discountAmount: payment.discountAmount,
+        promoName: payment.promo,
+        grandTotal: payment.total,
+        cashierName: cashierName,
       ),
     );
   }

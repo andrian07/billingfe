@@ -23,7 +23,8 @@ class Receipt {
   final int totalTable;
   final int nettoTable;
   final int subtotal;
-  final int discountPercent;
+  final int discountAmount;
+  final String? promoName;
   final int grandTotal;
   final String cashierName;
 
@@ -40,7 +41,8 @@ class Receipt {
     required this.totalTable,
     required this.nettoTable,
     required this.subtotal,
-    required this.discountPercent,
+    required this.discountAmount,
+    this.promoName,
     required this.grandTotal,
     required this.cashierName,
   });

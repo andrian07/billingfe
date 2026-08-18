@@ -220,7 +220,13 @@ class _BillingPageState extends State<BillingPage> {
     _loadCashierSummary();
 
     try {
-      final receipt = await _invoiceRepository.generateInvoice(table, result);
+      final session = await _sessionStorage.getSession();
+      final cashierName = session?['username']?.toString() ?? "Kasir";
+      final receipt = await _invoiceRepository.generateInvoice(
+        table,
+        result,
+        cashierName: cashierName,
+      );
       await _receiptPrinter.printReceipt(receipt);
     } catch (e) {
       if (!mounted) return;
