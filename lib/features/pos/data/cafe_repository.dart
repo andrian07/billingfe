@@ -15,6 +15,23 @@ class CafeRepositoryException implements Exception {
   String toString() => message;
 }
 
+/// Header info handed back by [CafeRepository.keepTransaction] — returned
+/// on every call (new or adding onto an existing hold) since the backend
+/// re-reads the header row regardless, so the kitchen ticket always has a
+/// code/name to print even when items are just being added to a hold that
+/// already existed.
+class KeepTransactionSaveResult {
+  final int id;
+  final String invoiceNumber;
+  final String? name;
+
+  const KeepTransactionSaveResult({
+    required this.id,
+    required this.invoiceNumber,
+    this.name,
+  });
+}
+
 /// Submits POS/cafe orders via the Cafe/* endpoints.
 class CafeRepository {
   final Dio _dio = Dio();
@@ -57,7 +74,7 @@ class CafeRepository {
   /// creating a new record, so header fields (table/promo/payment/tax/name)
   /// are only sent when creating a brand new one — [name] is ignored by the
   /// server once a keep transaction already exists.
-  Future<int> keepTransaction({
+  Future<KeepTransactionSaveResult> keepTransaction({
     int? keepTransactionId,
     String? name,
     int? table,
@@ -94,9 +111,16 @@ class CafeRepository {
     final data = await _post(ApiEndpoints.keepTransactionCafe, payload);
 
     final rawId = data['keep_transaction_id'];
-    return rawId is int
+    final id = rawId is int
         ? rawId
         : int.tryParse(rawId?.toString() ?? "") ?? keepTransactionId ?? 0;
+    final rawName = data['keep_transaction_name']?.toString();
+
+    return KeepTransactionSaveResult(
+      id: id,
+      invoiceNumber: data['keep_transaction_inv']?.toString() ?? "",
+      name: (rawName == null || rawName.isEmpty) ? null : rawName,
+    );
   }
 
   /// Lists every transaction currently on hold.

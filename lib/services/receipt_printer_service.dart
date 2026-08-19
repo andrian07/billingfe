@@ -4,6 +4,7 @@ import 'package:unified_esc_pos_printer/unified_esc_pos_printer.dart';
 
 import '../core/utils/formatters.dart';
 import '../models/cafe_receipt.dart';
+import '../models/cart_item.dart';
 import '../models/receipt.dart';
 import 'printer_filter.dart';
 import 'printer_preference_storage.dart';
@@ -25,6 +26,20 @@ class ReceiptPrinterService {
 
   Future<void> printCafeReceipt(CafeReceipt receipt) {
     return _print(buildTicket: () => _buildCafeTicket(receipt));
+  }
+
+  /// Kitchen order slip for a POS "keep" (parked order) save — [items] is
+  /// just what's new in *this* save, not the whole held cart, so re-saving
+  /// onto an existing hold only sends the kitchen the items it hasn't seen
+  /// yet.
+  Future<void> printKitchenOrder({
+    required String keepCode,
+    String? customerName,
+    required List<CartItem> items,
+  }) {
+    return _print(
+      buildTicket: () => _buildKitchenTicket(keepCode, customerName, items),
+    );
   }
 
   /// Shared USB scan/connect/print/disconnect flow — [buildTicket] builds
@@ -167,6 +182,47 @@ class ReceiptPrinterService {
 
     TicketLayout.row(ticket, "Bayar", receipt.paymentMethod);
     TicketLayout.footer(ticket, receipt.cashierName);
+
+    return ticket;
+  }
+
+  Future<Ticket> _buildKitchenTicket(
+    String keepCode,
+    String? customerName,
+    List<CartItem> items,
+  ) async {
+    final ticket = await Ticket.create(PaperSize.mm80);
+    final now = DateTime.now();
+
+    ticket.text(
+      "PESANAN DAPUR",
+      align: PrintAlign.center,
+      style: const PrintTextStyle(bold: true),
+    );
+    ticket.separator(char: '=', linesAfter: 1);
+
+    TicketLayout.row(ticket, "Kode", keepCode);
+    if (customerName != null) {
+      TicketLayout.row(ticket, "Customer", customerName);
+    }
+    ticket.text("${formatFullDate(now)}  ${formatClock(now)}");
+    ticket.separator(char: '=', linesAfter: 1);
+
+    for (final item in items) {
+      ticket.text(
+        item.product.name,
+        style: const PrintTextStyle(bold: true),
+      );
+      if (item.note != null) {
+        ticket.text("  Ket: ${item.note}");
+      }
+      TicketLayout.row(ticket, "Qty", "${item.quantity}");
+      ticket.feed(1);
+    }
+
+    ticket.separator(char: '=', linesAfter: 1);
+    ticket.feed(3);
+    ticket.cut();
 
     return ticket;
   }

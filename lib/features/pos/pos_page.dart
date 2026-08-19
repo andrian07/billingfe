@@ -282,7 +282,7 @@ class _PosPageState extends State<PosPage> {
       final session = await _sessionStorage.getSession();
       final createdBy = session?['username']?.toString() ?? "";
 
-      final keepId = await _cafeRepository.keepTransaction(
+      final result = await _cafeRepository.keepTransaction(
         keepTransactionId: targetKeepTransactionId,
         name: name,
         createdBy: createdBy,
@@ -302,9 +302,20 @@ class _PosPageState extends State<PosPage> {
       AppToast.success(
         context,
         merged
-            ? "Item ditambahkan ke pesanan \"$name\" (#$keepId)"
-            : "Pesanan ditahan sementara (#$keepId)",
+            ? "Item ditambahkan ke pesanan \"$name\" (#${result.id})"
+            : "Pesanan ditahan sementara (#${result.id})",
       );
+
+      try {
+        await _receiptPrinter.printKitchenOrder(
+          keepCode: result.invoiceNumber,
+          customerName: result.name,
+          items: itemsToSend,
+        );
+      } catch (e) {
+        if (!mounted) return;
+        AppToast.error(context, "Gagal mencetak struk dapur: $e");
+      }
     } on CafeRepositoryException catch (e) {
       if (!mounted) return;
       setState(() => _keepingTransaction = false);
