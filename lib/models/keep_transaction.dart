@@ -33,6 +33,27 @@ class KeepTransaction {
     required this.createdAt,
   });
 
+  /// Pass an explicit null to clear [name]; omitting it keeps the current
+  /// value — matches the usual copyWith convention for a nullable field.
+  KeepTransaction copyWith({String? name, bool clearName = false}) {
+    return KeepTransaction(
+      id: id,
+      name: clearName ? null : (name ?? this.name),
+      invoiceNumber: invoiceNumber,
+      date: date,
+      table: table,
+      paymentId: paymentId,
+      promoId: promoId,
+      subTotal: subTotal,
+      discount: discount,
+      tax: tax,
+      totalBill: totalBill,
+      status: status,
+      createdBy: createdBy,
+      createdAt: createdAt,
+    );
+  }
+
   factory KeepTransaction.fromJson(Map<String, dynamic> json) {
     final name = json['name']?.toString();
 

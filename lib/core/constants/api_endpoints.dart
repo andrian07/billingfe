@@ -80,6 +80,8 @@ class ApiEndpoints {
       "$baseUrl/Cafe/select_keep_transaction";
   static const String deleteKeepTransactionCafe =
       "$baseUrl/Cafe/delete_keep_transaction";
+  static const String renameKeepTransactionCafe =
+      "$baseUrl/Cafe/rename_keep_transaction";
   static const String transactionCafeList =
       "$baseUrl/Cafe/transaction_cafe_list";
   static const String transactionCafeDetail = "$baseUrl/Cafe/transaction_detail";

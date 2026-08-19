@@ -151,6 +151,19 @@ class CafeRepository {
     return KeepTransactionDetail.fromJson(result);
   }
 
+  /// Renames a held transaction (e.g. "Takeaway" -> the customer's actual
+  /// name) — only takes effect while it's still status Keep. Passing an
+  /// empty [name] clears it back to unnamed.
+  Future<void> renameKeepTransaction(
+    int keepTransactionId,
+    String name,
+  ) async {
+    await _post(ApiEndpoints.renameKeepTransactionCafe, {
+      "keep_transaction_id": keepTransactionId,
+      "name": name,
+    });
+  }
+
   /// Deletes a held transaction outright — used when the cashier decides a
   /// parked order is no longer needed.
   Future<void> deleteKeepTransaction(int keepTransactionId) async {

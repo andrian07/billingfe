@@ -7,6 +7,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../models/keep_transaction.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../data/cafe_repository.dart';
+import 'rename_keep_transaction_dialog.dart';
 
 /// Lists transactions parked via Cafe/keep_transaction and lets the cashier
 /// pick one back up. Resolves with the full [KeepTransactionDetail] (items
@@ -27,6 +28,7 @@ class _KeepTransactionListDialogState extends State<KeepTransactionListDialog> {
   List<KeepTransaction> _transactions = [];
   int? _loadingDetailId;
   int? _deletingId;
+  int? _renamingId;
 
   @override
   void initState() {
@@ -69,6 +71,38 @@ class _KeepTransactionListDialogState extends State<KeepTransactionListDialog> {
         _loadingDetailId = null;
         _error = e.message;
       });
+    }
+  }
+
+  Future<void> _rename(KeepTransaction transaction) async {
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (_) => RenameKeepTransactionDialog(
+        invoiceNumber: transaction.invoiceNumber,
+        currentName: transaction.name,
+      ),
+    );
+    if (newName == null) return;
+
+    setState(() => _renamingId = transaction.id);
+
+    try {
+      await _repository.renameKeepTransaction(transaction.id, newName);
+      if (!mounted) return;
+      setState(() {
+        final index = _transactions.indexWhere((t) => t.id == transaction.id);
+        if (index != -1) {
+          _transactions[index] = newName.isEmpty
+              ? transaction.copyWith(clearName: true)
+              : transaction.copyWith(name: newName);
+        }
+        _renamingId = null;
+      });
+      AppToast.success(context, "Nama pesanan berhasil diubah");
+    } on CafeRepositoryException catch (e) {
+      if (!mounted) return;
+      setState(() => _renamingId = null);
+      AppToast.error(context, e.message);
     }
   }
 
@@ -279,7 +313,9 @@ class _KeepTransactionListDialogState extends State<KeepTransactionListDialog> {
   Widget _buildTransactionCard(KeepTransaction transaction) {
     final isLoadingDetail = _loadingDetailId == transaction.id;
     final isDeleting = _deletingId == transaction.id;
-    final busy = _loadingDetailId != null || _deletingId != null;
+    final isRenaming = _renamingId == transaction.id;
+    final busy =
+        _loadingDetailId != null || _deletingId != null || _renamingId != null;
     final tableLabel = (transaction.table != null && transaction.table != 0)
         ? "Meja ${transaction.table}"
         : "Takeaway";
@@ -351,6 +387,25 @@ class _KeepTransactionListDialogState extends State<KeepTransactionListDialog> {
               ),
             ),
             const SizedBox(width: 6),
+            SizedBox(
+              width: 30,
+              height: 30,
+              child: isRenaming
+                  ? const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : InkWell(
+                      onTap: busy ? null : () => _rename(transaction),
+                      borderRadius: BorderRadius.circular(8),
+                      child: const Icon(
+                        Icons.edit_outlined,
+                        size: 19,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+            ),
+            const SizedBox(width: 4),
             SizedBox(
               width: 30,
               height: 30,
