@@ -9,6 +9,7 @@ import '../../../models/cafe_receipt.dart';
 import '../../../models/cafe_transaction.dart';
 import '../../../models/transaction.dart';
 import '../../../services/receipt_printer_service.dart';
+import '../../../services/session_storage.dart';
 import '../../../shared/widgets/app_toast.dart';
 import '../data/transaction_repository.dart';
 
@@ -134,8 +135,9 @@ class CafeTransactionListState extends State<CafeTransactionList> {
         ),
         title: Text("Batalkan Transaksi?", style: AppText.title),
         content: Text(
-          "Transaksi ${transaction.invoiceNumber} akan ditandai dibatalkan "
-          "dan tidak lagi dihitung ke total transaksi.",
+          "Transaksi ${transaction.invoiceNumber} akan ditandai dibatalkan, "
+          "tidak lagi dihitung ke total transaksi, dan stok item yang "
+          "terjual akan dikembalikan.",
           style: AppText.bodySecondary,
         ),
         actions: [
@@ -159,7 +161,12 @@ class CafeTransactionListState extends State<CafeTransactionList> {
 
     setState(() => _cancelingId = transaction.id);
     try {
-      await _repository.cancelCafeTransaction(transaction.id);
+      final session = await SessionStorage().getSession();
+      final createdBy = session?['username']?.toString() ?? "";
+      await _repository.cancelCafeTransaction(
+        transaction.id,
+        createdBy: createdBy,
+      );
       if (!mounted) return;
       AppToast.success(
         context,

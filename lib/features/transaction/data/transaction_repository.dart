@@ -164,9 +164,16 @@ class TransactionRepository {
     return CafeTransactionDetail.fromJson(result);
   }
 
-  Future<void> cancelCafeTransaction(int transactionCafeId) async {
+  /// [createdBy] is who's performing the cancellation (not who made the
+  /// original sale) — the backend records it against each restocked item
+  /// in movement_stock as the audit trail for the stock return.
+  Future<void> cancelCafeTransaction(
+    int transactionCafeId, {
+    required String createdBy,
+  }) async {
     await _post(ApiEndpoints.cancelTransactionCafe, {
       "transaction_cafe_id": transactionCafeId,
+      "created_by": createdBy,
     });
   }
 
