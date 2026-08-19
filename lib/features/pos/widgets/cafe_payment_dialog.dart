@@ -57,7 +57,7 @@ class _CafePaymentDialogState extends State<CafePaymentDialog> {
   List<PaymentMethod> _paymentMethods = [];
 
   PaymentMethod? _selectedPaymentMethod;
-  bool _printKitchenTicket = true;
+  bool _printKitchenTicket = false;
 
   bool _submitting = false;
   String? _submitError;
