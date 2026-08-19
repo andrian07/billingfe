@@ -157,15 +157,12 @@ class _BillingPageState extends State<BillingPage> {
       final remaining = table.endAt!.difference(now);
 
       if (remaining <= Duration.zero) {
-        // Fire-and-forget: only turns the physical light off, the session
-        // stays "unpaid" for staff to process as usual. This only runs
-        // once per table — the next tick already sees table.status as
-        // unpaid and skips it (see _tick's playing-only filter).
-        unawaited(
-          _billingRepository
-              .notifyTimerExpired(tableId: table.id)
-              .catchError((_) {}),
-        );
+        // Turning the physical light off is handled by TimerExpiryWatcher,
+        // a background poller that runs independently of which page is
+        // open (this widget's ticker stops the moment the cashier
+        // navigates away — see timer_expiry_watcher.dart for why that
+        // used to mean the light stayed on until they came back). This
+        // tick only needs to flip the local display to "unpaid".
         return table.copyWith(
           status: TableStatus.unpaid,
           timerText: formatDuration(Duration.zero),

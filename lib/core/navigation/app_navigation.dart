@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../services/session_storage.dart';
+import '../../services/timer_expiry_watcher.dart';
 
 const _routesByKey = {
   'meja': '/meja',
@@ -23,6 +24,7 @@ const _routesByKey = {
 
 Future<void> navigateToMenu(BuildContext context, String key) async {
   if (key == 'logout') {
+    TimerExpiryWatcher.instance.stop();
     await SessionStorage().clearSession();
     if (context.mounted) context.go('/login');
     return;

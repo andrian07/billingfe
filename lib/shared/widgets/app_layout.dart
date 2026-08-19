@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/session_storage.dart';
+import '../../services/timer_expiry_watcher.dart';
 import 'app_header.dart';
 import 'app_sidebar.dart';
 
@@ -44,6 +45,10 @@ class _AppLayoutState extends State<AppLayout> {
   void initState() {
     super.initState();
     _loadAllowedMenuKeys();
+    // Idempotent — every page mounts its own AppLayout (see app_router.dart),
+    // so this just no-ops after the first page of the session starts it.
+    // Runs until logout (see navigateToMenu), independent of page navigation.
+    TimerExpiryWatcher.instance.start();
   }
 
   Future<void> _loadAllowedMenuKeys() async {
