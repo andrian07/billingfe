@@ -16,12 +16,14 @@ class CafePaymentResult {
   final String paymentMethodName;
   final int? table;
   final int tax;
+  final bool printKitchenTicket;
 
   const CafePaymentResult({
     required this.transactionCafeId,
     required this.paymentMethodName,
     this.table,
     this.tax = 0,
+    this.printKitchenTicket = false,
   });
 }
 
@@ -55,6 +57,7 @@ class _CafePaymentDialogState extends State<CafePaymentDialog> {
   List<PaymentMethod> _paymentMethods = [];
 
   PaymentMethod? _selectedPaymentMethod;
+  bool _printKitchenTicket = true;
 
   bool _submitting = false;
   String? _submitError;
@@ -128,6 +131,7 @@ class _CafePaymentDialogState extends State<CafePaymentDialog> {
           paymentMethodName: paymentMethod.name,
           table: table,
           tax: 0,
+          printKitchenTicket: _printKitchenTicket,
         ),
       );
     } on CafeRepositoryException catch (e) {
@@ -267,6 +271,38 @@ class _CafePaymentDialogState extends State<CafePaymentDialog> {
               ),
             ),
           ],
+        ),
+
+        const SizedBox(height: 16),
+        InkWell(
+          onTap: () => setState(
+            () => _printKitchenTicket = !_printKitchenTicket,
+          ),
+          borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                Checkbox(
+                  value: _printKitchenTicket,
+                  activeColor: AppColors.primary,
+                  onChanged: (v) =>
+                      setState(() => _printKitchenTicket = v ?? false),
+                ),
+                Expanded(
+                  child: Text(
+                    "Cetak struk dapur juga",
+                    style: AppText.body,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );

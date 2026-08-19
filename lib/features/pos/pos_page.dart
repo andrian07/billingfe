@@ -229,6 +229,23 @@ class _PosPageState extends State<PosPage> {
         payment: result,
         cashierName: cashierName,
       );
+
+      // Kitchen slip first, then the customer-facing payment receipt —
+      // printed as two independent attempts so one failing doesn't stop
+      // the other from being tried.
+      if (result.printKitchenTicket) {
+        try {
+          await _receiptPrinter.printKitchenOrder(
+            keepCode: receipt.invoiceNumber,
+            items: items,
+          );
+        } catch (e) {
+          if (!mounted) return;
+          AppToast.error(context, "Gagal mencetak struk dapur: $e");
+        }
+      }
+
+      if (!mounted) return;
       await _receiptPrinter.printCafeReceipt(receipt);
     } catch (e) {
       if (!mounted) return;
